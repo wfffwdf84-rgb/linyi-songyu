@@ -3,7 +3,10 @@ import Image from "next/image";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { SiteShell } from "@/components/layout/SiteShell";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
+import { FactoryGallery } from "@/components/home/FactoryGallery";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
+import { WhatsAppIcon } from "@/components/ui/BrandIcons";
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -22,6 +25,14 @@ export default async function QualityLogisticsPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("quality");
+  const tNav = await getTranslations("nav");
+
+  const jumps = [
+    { href: "#qc", label: t("jumpQc") },
+    { href: "#hub", label: t("jumpHub") },
+    { href: "#sea", label: t("jumpSea") },
+    { href: "#land", label: t("jumpLand") },
+  ] as const;
 
   const qcCards = [
     { icon: "speed", title: t("card1Title"), desc: t("card1Desc"), spec: t("card1Spec") },
@@ -32,9 +43,12 @@ export default async function QualityLogisticsPage({ params }: Props) {
   return (
     <SiteShell>
       <main className="pb-20 md:pb-0">
-        <section className="relative border-b border-outline-variant bg-surface-container-highest py-16 md:py-24">
-          <div className="mx-auto grid max-w-container-max grid-cols-1 items-center gap-12 px-margin-mobile md:grid-cols-2 md:px-margin-desktop">
+        <section className="relative border-b border-outline-variant bg-surface-container-lowest py-12 md:py-16">
+          <div className="mx-auto grid max-w-container-max grid-cols-1 items-center gap-10 px-margin-mobile md:grid-cols-2 md:px-margin-desktop">
             <div>
+              <Breadcrumbs
+                items={[{ href: "/", label: tNav("home") }, { label: tNav("quality") }]}
+              />
               <div className="mb-6 inline-flex items-center gap-2 rounded-sm border border-outline px-3 py-1">
                 <MaterialIcon name="verified" filled className="text-sm text-primary" />
                 <span className="text-label-caps text-secondary uppercase">{t("badge")}</span>
@@ -42,55 +56,74 @@ export default async function QualityLogisticsPage({ params }: Props) {
               <h1 className="mb-6 text-headline-lg-mobile text-on-surface md:text-headline-xl">
                 {t("h1")}
               </h1>
-              <p className="mb-8 max-w-xl text-body-lg text-secondary">{t("intro")}</p>
-              <Link
-                href="/request-quote"
-                className="inline-flex items-center gap-2 rounded bg-primary-container px-8 py-3 text-technical-data font-bold text-on-primary-container shadow-sm hover:bg-primary hover:text-on-primary"
-              >
-                {t("startInquiry")}
-                <MaterialIcon name="arrow_forward" />
-              </Link>
-            </div>
-            <div className="relative h-[400px] w-full overflow-hidden rounded-lg border border-outline-variant shadow-sm">
-              <Image
-                src="https://lh3.googleusercontent.com/aida/AP1WRLt7zZE-Vo39YiGM-YsOVtriEsAdVOt08wUitJ9Lc1jYidjLhu0YH6LgYehQlZWpNcKikkFDzIDG1AU79KbsXxpq78eevqEjgqj0NALhg9gtuPD91HPCE-7s3DvO20tTsAswYUMOurWn0TrVt6W5PtRk-uwgm1r4CfDNqP4HF0aOcr0_FuGfKnKhTvqQ2ZZ8u_oBOeiSPhg6b-_8dFGKrI_dgr2wuxCIa03oQ3eztbqjQSCN2b36GHkkngs"
-                alt={t("card1Title")}
-                fill
-                className="object-cover"
-              />
-              <div className="absolute right-4 bottom-4 left-4 flex items-center justify-between rounded border border-outline-variant bg-surface/90 p-4 backdrop-blur-sm">
-                <div>
-                  <p className="mb-1 text-label-caps text-secondary">{t("status")}</p>
-                  <p className="text-technical-data font-bold text-primary">{t("statusPass")}</p>
-                </div>
-                <MaterialIcon name="check_circle" className="text-3xl text-primary" />
+              <p className="mb-8 max-w-xl text-body-lg text-on-surface-variant">{t("intro")}</p>
+              <div className="mb-8 flex flex-wrap gap-3">
+                <Link
+                  href="/contact"
+                  className="inline-flex items-center gap-2 rounded bg-primary-container px-6 py-3 text-technical-data font-bold text-on-primary-container shadow-sm hover:bg-primary hover:text-on-primary"
+                >
+                  <WhatsAppIcon className="h-5 w-5" />
+                  {t("whatsapp")}
+                </Link>
+                <Link
+                  href="/parts/transmission-systems"
+                  className="inline-flex items-center gap-2 rounded border border-outline-variant px-6 py-3 text-technical-data text-on-surface hover:border-primary"
+                >
+                  {t("browseCatalog")}
+                </Link>
               </div>
+              <nav aria-label={tNav("quality")} className="flex flex-wrap gap-2">
+                {jumps.map((item) => (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    className="rounded border border-outline-variant bg-surface px-3 py-1.5 text-technical-data text-on-surface-variant hover:border-primary hover:text-primary"
+                  >
+                    {item.label}
+                  </a>
+                ))}
+              </nav>
             </div>
+            <figure>
+              <div className="relative aspect-video w-full overflow-hidden rounded border border-outline-variant bg-surface-container">
+                <Image
+                  src="/images/factory/cmm-inspection.jpg"
+                  alt={t("photoCaption")}
+                  fill
+                  quality={100}
+                  unoptimized
+                  className="object-cover object-center"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  priority
+                />
+              </div>
+              <figcaption className="mt-3 text-technical-data text-on-surface-variant">
+                {t("photoCaption")}
+              </figcaption>
+            </figure>
           </div>
         </section>
 
-        <section className="bg-surface py-16 md:py-24">
+        <section id="qc" className="scroll-mt-24 bg-surface py-16 md:py-20">
           <div className="mx-auto max-w-container-max px-margin-mobile md:px-margin-desktop">
-            <div className="mb-12 text-center">
+            <div className="mb-12 max-w-3xl">
               <h2 className="mb-4 text-headline-lg-mobile text-on-surface md:text-headline-lg">
                 {t("protocolTitle")}
               </h2>
-              <p className="mx-auto max-w-2xl text-body-md text-secondary">{t("protocolDesc")}</p>
+              <p className="text-body-md text-on-surface-variant">{t("protocolDesc")}</p>
             </div>
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-              {qcCards.map((card) => (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+              {qcCards.map((card, index) => (
                 <div
                   key={card.title}
-                  className="group rounded-lg border border-outline-variant bg-surface-container-lowest p-6 transition-shadow hover:shadow-md"
+                  className="rounded border border-outline-variant bg-surface-container-lowest p-6"
                 >
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-surface-container group-hover:bg-primary-container">
-                    <MaterialIcon
-                      name={card.icon}
-                      className="text-secondary group-hover:text-on-primary-container"
-                    />
+                  <p className="mb-3 text-label-caps text-primary">{String(index + 1).padStart(2, "0")}</p>
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded bg-surface-container">
+                    <MaterialIcon name={card.icon} className="text-primary" />
                   </div>
                   <h3 className="mb-2 text-body-lg font-bold text-on-surface">{card.title}</h3>
-                  <p className="mb-4 text-body-sm text-secondary">{card.desc}</p>
+                  <p className="mb-4 text-body-sm text-on-surface-variant">{card.desc}</p>
                   <div className="border-t border-outline-variant pt-4">
                     <p className="text-label-caps text-primary">{card.spec}</p>
                   </div>
@@ -100,33 +133,48 @@ export default async function QualityLogisticsPage({ params }: Props) {
           </div>
         </section>
 
-        <section className="border-y border-outline-variant bg-surface-container-low py-16 md:py-24">
+        <FactoryGallery showMoreLink={false} />
+
+        <section
+          id="hub"
+          className="scroll-mt-24 border-y border-outline-variant bg-surface-container-low py-16 md:py-20"
+        >
           <div className="mx-auto grid max-w-container-max grid-cols-1 items-center gap-12 px-margin-mobile md:grid-cols-2 md:px-margin-desktop">
-            <div className="relative order-2 h-[500px] overflow-hidden rounded-lg border border-outline shadow-sm md:order-1">
+            <div className="relative order-2 aspect-video overflow-hidden rounded border border-outline-variant bg-surface-container md:order-1">
               <Image
-                src="https://lh3.googleusercontent.com/aida/AP1WRLs_nCSoedJ7kwmUZgQrDSVaXxWiCWSQfRSJ3o8Dg21zGgSMq2nkOFCh_1-X7-uzAl_bxupbuHteN7ref4Zxr2cN5zTRBraz9A4RfN8p7cHd7acfNySJfrpIWpnwDje0Ena3zhbBC2vGyvdPYafl8qGoTmU1BdPc_RxAvWhu2svn0V9Dw_qLFpEtJWregxdypMU6OCWbuv-p0zdHH2P19GO8A-rog_pC2cxDOFIekWRiftVwYIWHvz7vMyY"
+                src="/images/factory/factory-exterior.jpg"
                 alt={t("hubTitle")}
                 fill
-                className="object-cover"
+                quality={100}
+                unoptimized
+                className="object-cover object-center"
+                sizes="(max-width: 768px) 100vw, 50vw"
               />
             </div>
             <div className="order-1 md:order-2">
               <h2 className="mb-6 text-headline-lg-mobile text-on-surface md:text-headline-lg">
                 {t("hubTitle")}
               </h2>
-              <p className="mb-8 text-body-lg text-secondary">{t("hubDesc")}</p>
+              <p className="mb-8 text-body-lg text-on-surface-variant">{t("hubDesc")}</p>
               <ul className="space-y-6">
                 {[
                   { icon: "schedule", title: t("shipTitle"), desc: t("shipDesc") },
-                  { icon: "directions_boat", title: t("consolTitle"), desc: t("consolDesc") },
+                  { icon: "directions_boat", title: t("portTitle"), desc: t("portDesc") },
+                  { icon: "local_shipping", title: t("landTitle"), desc: t("landDesc") },
+                  { icon: "inventory_2", title: t("consolTitle"), desc: t("consolDesc"), id: "consol" },
+                  { icon: "public", title: t("destTitle"), desc: t("destDesc") },
                 ].map((item) => (
-                  <li key={item.title} className="flex items-start gap-4">
-                    <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded border border-outline-variant bg-surface-container">
-                      <MaterialIcon name={item.icon} className="text-sm text-on-surface" />
+                  <li
+                    key={item.title}
+                    id={item.id}
+                    className="flex scroll-mt-24 items-start gap-4"
+                  >
+                    <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded border border-outline-variant bg-surface">
+                      <MaterialIcon name={item.icon} className="text-sm text-primary" />
                     </div>
                     <div>
-                      <h4 className="text-technical-data font-bold text-on-surface">{item.title}</h4>
-                      <p className="mt-1 text-body-sm text-secondary">{item.desc}</p>
+                      <h3 className="text-technical-data font-bold text-on-surface">{item.title}</h3>
+                      <p className="mt-1 text-body-sm text-on-surface-variant">{item.desc}</p>
                     </div>
                   </li>
                 ))}
@@ -135,19 +183,88 @@ export default async function QualityLogisticsPage({ params }: Props) {
           </div>
         </section>
 
-        <section className="bg-inverse-surface py-20 text-on-primary">
+        <section id="sea" className="scroll-mt-24 bg-surface py-16 md:py-20">
+          <div className="mx-auto max-w-container-max px-margin-mobile md:px-margin-desktop">
+            <div className="mb-12 max-w-3xl">
+              <h2 className="mb-4 text-headline-lg-mobile text-on-surface md:text-headline-lg">
+                {t("seaTitle")}
+              </h2>
+              <p className="text-body-md text-on-surface-variant">{t("seaLead")}</p>
+            </div>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+              {[
+                { icon: "warehouse", title: t("sea1Title"), desc: t("sea1Desc"), spec: t("sea1Spec") },
+                { icon: "directions_boat", title: t("sea2Title"), desc: t("sea2Desc"), spec: t("sea2Spec") },
+                { icon: "public", title: t("sea3Title"), desc: t("sea3Desc"), spec: t("sea3Spec") },
+              ].map((card) => (
+                <div
+                  key={card.title}
+                  className="rounded border border-outline-variant bg-surface-container-lowest p-6"
+                >
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded bg-surface-container">
+                    <MaterialIcon name={card.icon} className="text-primary" />
+                  </div>
+                  <h3 className="mb-2 text-body-lg font-bold text-on-surface">{card.title}</h3>
+                  <p className="mb-4 text-body-sm text-on-surface-variant">{card.desc}</p>
+                  <div className="border-t border-outline-variant pt-4">
+                    <p className="text-label-caps text-primary">{card.spec}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="land"
+          className="scroll-mt-24 border-t border-outline-variant bg-surface-container-low py-16 md:py-20"
+        >
+          <div className="mx-auto max-w-container-max px-margin-mobile md:px-margin-desktop">
+            <div className="mb-12 max-w-3xl">
+              <h2 className="mb-4 text-headline-lg-mobile text-on-surface md:text-headline-lg">
+                {t("landHowTitle")}
+              </h2>
+              <p className="text-body-md text-on-surface-variant">{t("landLead")}</p>
+            </div>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+              {[
+                { icon: "warehouse", title: t("land1Title"), desc: t("land1Desc"), spec: t("land1Spec") },
+                { icon: "local_shipping", title: t("land2Title"), desc: t("land2Desc"), spec: t("land2Spec") },
+                { icon: "public", title: t("land3Title"), desc: t("land3Desc"), spec: t("land3Spec") },
+              ].map((card) => (
+                <div
+                  key={card.title}
+                  className="rounded border border-outline-variant bg-surface-container-lowest p-6"
+                >
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded bg-surface-container">
+                    <MaterialIcon name={card.icon} className="text-primary" />
+                  </div>
+                  <h3 className="mb-2 text-body-lg font-bold text-on-surface">{card.title}</h3>
+                  <p className="mb-4 text-body-sm text-on-surface-variant">{card.desc}</p>
+                  <div className="border-t border-outline-variant pt-4">
+                    <p className="text-label-caps text-primary">{card.spec}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-on-secondary-fixed py-16 text-white md:py-20">
           <div className="mx-auto max-w-container-max px-margin-mobile text-center md:px-margin-desktop">
-            <h2 className="mb-6 text-headline-lg-mobile md:text-headline-lg">{t("ctaTitle")}</h2>
+            <h2 className="mb-4 text-headline-lg-mobile md:text-headline-lg">{t("ctaTitle")}</h2>
             <p className="mx-auto mb-8 max-w-2xl text-body-lg text-secondary-fixed-dim">
               {t("ctaDesc")}
             </p>
-            <Link
-              href="/request-quote"
-              className="inline-flex items-center gap-2 rounded bg-primary-container px-8 py-4 text-body-lg font-bold text-on-primary-container hover:bg-primary hover:text-on-primary"
-            >
-              {t("ctaButton")}
-              <MaterialIcon name="send" />
-            </Link>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-2 rounded bg-primary-container px-8 py-3 text-technical-data font-bold text-on-primary-container hover:bg-primary hover:text-on-primary"
+              >
+                <WhatsAppIcon className="h-5 w-5" />
+                {t("whatsapp")}
+              </Link>
+            </div>
           </div>
         </section>
       </main>

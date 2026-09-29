@@ -4,13 +4,18 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { SiteShell } from "@/components/layout/SiteShell";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
+import { WhatsAppIcon } from "@/components/ui/BrandIcons";
 import { getCategory } from "@/lib/data/categories";
 import { getAllProductPaths, getProduct } from "@/lib/data/products";
 import { loc } from "@/lib/locale";
 import { siteConfig } from "@/lib/site";
 import { routing } from "@/i18n/routing";
+import { AddToQuoteButton } from "@/components/quote/AddToQuoteButton";
+import { ProductBackButton } from "@/components/product/ProductBackButton";
+import { addToQuoteButtonClass } from "@/lib/quote-button";
 
 type PageProps = {
   params: Promise<{ locale: string; category: string; slug: string }>;
@@ -45,12 +50,13 @@ export default async function ProductPage({ params }: PageProps) {
   if (!product || !category) notFound();
 
   const t = await getTranslations("product");
+  const tNav = await getTranslations("nav");
   const name = loc(locale, product.name.en, product.name.zh);
   const description = loc(locale, product.description.en, product.description.zh);
   const productUrl = `${siteConfig.url}/parts/${categorySlug}/${slug}`;
 
   return (
-    <SiteShell showFloatingActions={false}>
+    <SiteShell showFloatingActions={false} hideBottomNav>
       <JsonLd
         data={{
           "@context": "https://schema.org",
@@ -72,35 +78,30 @@ export default async function ProductPage({ params }: PageProps) {
         }}
       />
 
-      <main className="mx-auto mb-24 max-w-container-max px-margin-mobile py-gutter md:mb-12 md:px-margin-desktop">
-        <nav className="mb-8 flex items-center gap-2 text-label-caps text-on-surface-variant uppercase">
-          <Link href="/parts/transmission-systems" className="hover:text-primary">
-            {t("catalog")}
-          </Link>
-          <MaterialIcon name="chevron_right" className="text-[14px]" />
-          <Link href={`/parts/${categorySlug}`} className="hover:text-primary">
-            {loc(locale, category.name.en, category.name.zh)}
-          </Link>
-          <MaterialIcon name="chevron_right" className="text-[14px]" />
-          <span className="text-on-surface">{product.partNumber}</span>
-        </nav>
+      <main className="mx-auto mb-[calc(5.75rem+env(safe-area-inset-bottom))] max-w-container-max px-margin-mobile py-gutter md:mb-12 md:px-margin-desktop">
+        <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <ProductBackButton fallbackHref={`/parts/${categorySlug}`} />
+          <Breadcrumbs
+            className="mb-0 min-w-0"
+            items={[
+              { href: "/", label: tNav("home") },
+              { href: "/parts/transmission-systems", label: tNav("products") },
+              { href: `/parts/${categorySlug}`, label: loc(locale, category.name.en, category.name.zh) },
+              { label: product.partNumber },
+            ]}
+          />
+        </div>
 
         <div className="mb-16 grid grid-cols-1 gap-gutter md:grid-cols-12">
           <div className="flex flex-col gap-4 md:col-span-7">
             <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest">
-              <div className="absolute top-4 left-4 z-10 flex items-center gap-1 rounded bg-on-background px-3 py-1 text-label-caps text-on-primary shadow-sm">
-                <MaterialIcon
-                  name="verified"
-                  filled
-                  className="text-[14px] text-primary-container"
-                />
-                {t("genuine")}
-              </div>
               <Image
                 src={product.image}
                 alt={name}
                 fill
-                className="object-cover"
+                quality={100}
+                unoptimized
+                className={product.imageFit === "contain" ? "object-contain object-center p-6" : "object-cover object-center"}
                 sizes="(max-width: 768px) 100vw, 60vw"
                 priority
               />
@@ -115,7 +116,7 @@ export default async function ProductPage({ params }: PageProps) {
                 </span>
                 {product.inStock && (
                   <span className="flex items-center text-technical-data text-primary">
-                    <MaterialIcon name="check_circle" className="mr-1 text-[16px]" />
+                    <MaterialIcon name="check_circle" className="me-1 text-[16px]" />
                     {t("stockReady")}
                   </span>
                 )}
@@ -151,18 +152,18 @@ export default async function ProductPage({ params }: PageProps) {
             </div>
 
             <div className="mt-auto hidden flex-col gap-4 md:flex">
-              <Link
-                href="/request-quote"
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary-container py-4 text-headline-md text-on-primary-container shadow-[0_2px_4px_rgba(0,0,0,0.05)] hover:bg-[#e6a600]"
-              >
-                <MaterialIcon name="request_quote" />
-                {t("addRfq")}
-              </Link>
+              <AddToQuoteButton
+                product={product}
+                icon="request_quote"
+                className={addToQuoteButtonClass("primary")}
+              />
               <a
                 href={siteConfig.whatsapp}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-outline-variant bg-surface-container-lowest py-3 text-technical-data text-on-surface hover:border-primary"
               >
-                <MaterialIcon name="forum" className="text-[#25D366]" />
+                <WhatsAppIcon className="h-5 w-5" />
                 {t("whatsapp")}
               </a>
             </div>
@@ -197,44 +198,54 @@ export default async function ProductPage({ params }: PageProps) {
 
           <div>
             <h2 className="mb-6 flex items-center gap-2 text-headline-md text-on-surface">
-              <MaterialIcon name="precision_manufacturing" />
+              <MaterialIcon name="verified" />
               {t("zeroDefect")}
             </h2>
-            <div className="group relative h-64 cursor-pointer overflow-hidden rounded-xl border border-outline-variant md:h-[calc(100%-3rem)]">
+            <Link
+              href="/quality-logistics"
+              className="group relative block aspect-video overflow-hidden rounded-xl border border-outline-variant"
+            >
               <Image
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDd-RrbGPMK1NlHinR5KrA24qpJWyjxcl9x2i9LCkIUg78wwweO8ALFB44JSWhKjel3ER-lhgeGi_CefeJaHYogIaRrvkDkXeB4oZoUTiijni9RyYHlgeroSAWedNnAl2V3pLASi_r1WnBRawkV0lnfFBIYYy9xzj5-59jxS4yBn4OXBcGoTDYEH39-lz6YOK9h1hAlm7cpol2BLSLfDrXMuRgm8jUK7MJ-kTEus1jVZNCkAKVfxrFs"
-                alt={t("zeroDefect")}
+                src="/images/factory/cmm-inspection.jpg"
+                alt={t("factoryTest")}
                 fill
-                className="object-cover"
+                quality={100}
+                unoptimized
+                className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.02]"
+                sizes="(max-width: 768px) 100vw, 40vw"
               />
-              <div className="absolute inset-0 flex items-center justify-center bg-on-background/40 group-hover:bg-on-background/50">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary-container text-on-primary-container shadow-lg">
-                  <MaterialIcon name="play_arrow" filled className="text-[32px]" />
-                </div>
+              <div className="absolute inset-0 bg-on-background/20 group-hover:bg-on-background/30" />
+              <div className="absolute bottom-4 start-4 end-4 flex items-center justify-between gap-3">
+                <span className="rounded bg-surface/90 px-3 py-1 text-technical-data text-on-surface backdrop-blur-sm">
+                  {t("factoryTest")}
+                </span>
+                <span className="inline-flex items-center gap-1 rounded bg-primary-container px-3 py-1 text-technical-data text-on-primary-container">
+                  {t("qcLink")}
+                  <MaterialIcon name="arrow_forward" className="text-sm" />
+                </span>
               </div>
-              <div className="absolute bottom-4 left-4 rounded bg-surface/90 px-3 py-1 text-technical-data text-on-surface backdrop-blur-sm">
-                {t("factoryTest")}
-              </div>
-            </div>
+            </Link>
           </div>
         </div>
       </main>
 
-      <div className="fixed bottom-0 left-0 z-50 flex w-full gap-3 border-t border-outline-variant bg-surface p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:hidden">
+      <div className="fixed bottom-0 left-0 z-50 flex w-full gap-3 border-t border-outline-variant bg-surface p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:hidden">
+        <ProductBackButton fallbackHref={`/parts/${categorySlug}`} variant="icon" />
         <a
           href={siteConfig.whatsapp}
+          target="_blank"
+          rel="noopener noreferrer"
           className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-outline-variant bg-surface-container-lowest py-3 text-technical-data text-on-surface"
         >
-          <MaterialIcon name="forum" className="text-[#25D366]" />
+          <WhatsAppIcon className="h-5 w-5" />
           {t("chat")}
         </a>
-        <Link
-          href="/request-quote"
-          className="flex flex-[2] items-center justify-center gap-2 rounded-lg bg-primary-container py-3 text-[18px] text-headline-md text-on-primary-container"
-        >
-          <MaterialIcon name="request_quote" />
-          {t("inquiry")}
-        </Link>
+        <AddToQuoteButton
+          product={product}
+          icon="request_quote"
+          label={t("inquiry")}
+          className={addToQuoteButtonClass("mobile")}
+        />
       </div>
     </SiteShell>
   );

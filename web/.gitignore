@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+.vercel
+
+# local factory video uploads (production uses Vercel Blob)
+/public/videos/factory/*
+!/public/videos/factory/.gitkeep
+
+.env*

@@ -56,6 +56,10 @@
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-zh: "Noto Sans SC", var(--font-inter), ui-sans-serif, sans-serif;
+  --font-ar: "Noto Sans Arabic", var(--font-inter), ui-sans-serif, sans-serif;
+  --font-th: "Noto Sans Thai", var(--font-inter), ui-sans-serif, sans-serif;
+  --font-ko: "Noto Sans KR", var(--font-inter), ui-sans-serif, sans-serif;
+  --font-ja: "Noto Sans JP", var(--font-inter), ui-sans-serif, sans-serif;
   --font-technical: var(--font-ibm-plex), ui-monospace, monospace;
 
   --spacing-margin-mobile: 16px;
@@ -70,10 +74,15 @@
 }
 
 @utility text-headline-xl {
-  font-size: 48px;
-  line-height: 56px;
+  font-size: 28px;
+  line-height: 36px;
   letter-spacing: -0.02em;
   font-weight: 700;
+
+  @media (width >= 768px) {
+    font-size: 48px;
+    line-height: 56px;
+  }
 }
 
 @utility text-headline-lg {
@@ -168,6 +177,26 @@ body {
 html.font-zh,
 html.font-zh body {
   font-family: var(--font-zh);
+}
+
+html.font-ar,
+html.font-ar body {
+  font-family: var(--font-ar);
+}
+
+html.font-th,
+html.font-th body {
+  font-family: var(--font-th);
+}
+
+html.font-ko,
+html.font-ko body {
+  font-family: var(--font-ko);
+}
+
+html.font-ja,
+html.font-ja body {
+  font-family: var(--font-ja);
 }
 
 .material-symbols-outlined {

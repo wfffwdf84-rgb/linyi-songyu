@@ -7,20 +7,22 @@ type SiteShellProps = {
   children: React.ReactNode;
   showFloatingActions?: boolean;
   hideFooter?: boolean;
+  hideBottomNav?: boolean;
 };
 
 export function SiteShell({
   children,
   showFloatingActions = true,
   hideFooter = false,
+  hideBottomNav = false,
 }: SiteShellProps) {
   return (
-    <>
+    <div className="flex min-h-screen flex-col">
       <SiteHeader />
-      {children}
+      <div className="flex-1">{children}</div>
       {!hideFooter && <SiteFooter />}
-      <BottomNav />
+      {!hideBottomNav && <BottomNav />}
       {showFloatingActions && <FloatingActions />}
-    </>
+    </div>
   );
 }

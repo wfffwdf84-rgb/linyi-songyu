@@ -1,20 +1,168 @@
 "use client";
 
-import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
+import { FacebookIcon, WhatsAppIcon } from "@/components/ui/BrandIcons";
+import { inquirySmsHref, inquiryWhatsAppHref, openInquirySms, siteConfig } from "@/lib/site";
 import { cn } from "@/lib/utils";
+import { type InquiryTypeId, inquiryTypeIds, normalizeInquiryType } from "@/lib/inquiry";
+import { useQuoteList } from "@/components/quote/QuoteListProvider";
 
-export function QuoteForm() {
+const inquiryTypeIcons: Record<InquiryTypeId, string> = {
+  transmission: "settings",
+  structural: "view_in_ar",
+  brake: "disc_full",
+  radiator: "device_thermostat",
+  hydraulic: "water_drop",
+  oemMatch: "pin",
+  consol: "inventory_2",
+  land: "local_shipping",
+};
+
+type QuoteFormProps = {
+  initialTypes?: InquiryTypeId[];
+};
+
+export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
   const [urgent, setUrgent] = useState(false);
+  const [photoName, setPhotoName] = useState("");
+  const [sent, setSent] = useState(false);
+  const [selected, setSelected] = useState<InquiryTypeId[]>(initialTypes);
+  const [typeError, setTypeError] = useState(false);
+  const [smsHint, setSmsHint] = useState(false);
+  const [smsDraft, setSmsDraft] = useState("");
+  const [smsCopied, setSmsCopied] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const t = useTranslations("quote");
+  const locale = useLocale();
+  const { items } = useQuoteList();
+  const mergedTypes = useRef(false);
+
+  useEffect(() => {
+    if (mergedTypes.current || items.length === 0) return;
+    mergedTypes.current = true;
+    setSelected((current) => {
+      const extra = items.map((item) => normalizeInquiryType(item.inquiryType));
+      return [...new Set([...current, ...extra])];
+    });
+  }, [items]);
+
+  function toggleType(id: InquiryTypeId) {
+    setTypeError(false);
+    setSelected((current) =>
+      current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
+    );
+  }
+
+  function buildBody(form: HTMLFormElement) {
+    if (selected.length === 0) {
+      setTypeError(true);
+      return null;
+    }
+    const fd = new FormData(form);
+    const company = String(fd.get("company") ?? "").trim();
+    const contact = String(fd.get("contact") ?? "").trim();
+    const vin = String(fd.get("vin") ?? "").trim();
+    const brand = String(fd.get("brand") ?? "").trim();
+    const notes = String(fd.get("notes") ?? "").trim();
+    const isZh = locale === "zh";
+    const typeLabels = selected.map((id) => t(`type_${id}`)).join(isZh ? "、" : ", ");
+
+    const parts =
+      items.length > 0
+        ? [
+            isZh ? "零件" : "Parts",
+            ...items.map((item) => `- ${item.partNumber} x${item.qty}`),
+          ]
+        : [];
+
+    return [
+      isZh ? "【临沂松昱询价】" : "[Linyi Songyu Inquiry]",
+      `${isZh ? "种类" : "Type"}: ${typeLabels}`,
+      urgent ? (isZh ? "紧急 / 停机" : "URGENT / Machine down") : "",
+      ...parts,
+      company ? `${isZh ? "公司" : "Company"}: ${company}` : "",
+      `${isZh ? "联系电话" : "Phone"}: ${contact}`,
+      vin ? `VIN: ${vin}` : "",
+      brand && brand !== t("selectBrand") ? `${isZh ? "品牌" : "Brand"}: ${brand}` : "",
+      photoName ? `${isZh ? "已选照片" : "Photo"}: ${photoName}` : "",
+      notes ? `${isZh ? "需求" : "Need"}: ${notes}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const body = buildBody(e.currentTarget);
+    if (!body) return;
+    window.open(inquiryWhatsAppHref(body), "_blank", "noopener,noreferrer");
+    setSent(true);
+  }
+
+  async function copySms(body: string) {
+    try {
+      await navigator.clipboard.writeText(body);
+      setSmsCopied(true);
+    } catch {
+      setSmsCopied(false);
+    }
+  }
+
+  async function onSms() {
+    const form = formRef.current;
+    if (!form) return;
+    if (!form.reportValidity()) {
+      form.querySelector(":invalid")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    const body = buildBody(form);
+    if (!body) {
+      document.getElementById("quote-types")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    setSmsDraft(body);
+    setSmsHint(true);
+    await copySms(body);
+    openInquirySms(body);
+  }
 
   return (
-    <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+    <form ref={formRef} className="space-y-6" onSubmit={onSubmit}>
+      {sent ? (
+        <div className="rounded-xl border-2 border-primary bg-primary-fixed/10 p-6">
+          <h3 className="mb-2 flex items-center gap-2 text-headline-md text-on-surface">
+            <MaterialIcon name="check_circle" filled className="text-primary" />
+            {t("sentTitle")}
+          </h3>
+          <p className="mb-4 text-body-sm text-on-surface-variant">{t("sentDesc")}</p>
+          <div className="flex flex-col gap-3">
+            <a
+              href={siteConfig.whatsapp}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] py-4 text-headline-md text-white"
+            >
+              <WhatsAppIcon className="h-6 w-6" />
+              WhatsApp
+            </a>
+            <a
+              href={siteConfig.tel}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-4 text-headline-md text-on-primary"
+            >
+              <MaterialIcon name="call" filled />
+              {t("callNow")} {siteConfig.phone}
+            </a>
+          </div>
+        </div>
+      ) : null}
+
       <div
         className={cn(
-          "flex items-center justify-between rounded-xl border border-error bg-error-container p-6 shadow-sm transition-all",
+          "flex flex-col gap-4 rounded-xl border border-error bg-error-container p-6 shadow-sm transition-all sm:flex-row sm:items-center sm:justify-between",
           urgent && "scale-[1.02] shadow-md",
         )}
       >
@@ -27,7 +175,7 @@ export function QuoteForm() {
             <p className="text-body-sm text-on-error-container opacity-80">{t("urgentDesc")}</p>
           </div>
         </div>
-        <label className="relative inline-block h-8 w-14 cursor-pointer">
+        <label className="relative inline-block h-8 w-14 shrink-0 cursor-pointer self-end sm:self-auto">
           <input
             type="checkbox"
             checked={urgent}
@@ -39,6 +187,53 @@ export function QuoteForm() {
         </label>
       </div>
 
+      <div
+        id="quote-types"
+        className={cn(
+          "rounded-xl border bg-surface-container-lowest p-6 shadow-sm",
+          typeError ? "border-error" : "border-outline-variant",
+        )}
+      >
+        <div className="mb-4 flex items-center justify-between border-b border-outline-variant pb-4">
+          <div className="flex items-center gap-2">
+            <MaterialIcon name="category" className="text-secondary" />
+            <h2 className="text-headline-md text-on-surface">{t("stepTypes")}</h2>
+          </div>
+          <span className="rounded-full bg-primary/10 px-3 py-1 text-label-caps text-primary">
+            {t("required")}
+          </span>
+        </div>
+        <p className="mb-4 text-body-sm text-on-surface-variant">{t("typesHint")}</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {inquiryTypeIds.map((id) => {
+            const active = selected.includes(id);
+            return (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={active}
+                onClick={() => toggleType(id)}
+                className={cn(
+                  "flex flex-col items-start gap-2 rounded border px-3 py-3 text-left transition-colors",
+                  active
+                    ? "border-primary bg-primary-fixed/20 text-on-surface"
+                    : "border-outline-variant bg-surface hover:border-primary/50",
+                )}
+              >
+                <MaterialIcon
+                  name={inquiryTypeIcons[id]}
+                  className={cn("text-xl", active ? "text-primary" : "text-secondary")}
+                />
+                <span className="text-technical-data font-semibold">{t(`type_${id}`)}</span>
+              </button>
+            );
+          })}
+        </div>
+        {typeError ? (
+          <p className="mt-3 text-body-sm text-error">{t("typesError")}</p>
+        ) : null}
+      </div>
+
       <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-6 shadow-sm">
         <div className="mb-4 flex items-center justify-between border-b border-outline-variant pb-4">
           <div className="flex items-center gap-2">
@@ -46,18 +241,29 @@ export function QuoteForm() {
             <h2 className="text-headline-md text-on-surface">{t("step1")}</h2>
           </div>
           <span className="rounded-full bg-surface-container px-3 py-1 text-label-caps text-on-surface-variant">
-            {t("required")}
+            {t("optional")}
           </span>
         </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="sr-only"
+            onChange={(e) => setPhotoName(e.target.files?.[0]?.name ?? "")}
+          />
           <button
             type="button"
+            onClick={() => fileRef.current?.click()}
             className="group flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-primary-container bg-primary-fixed/10 p-8 text-center hover:bg-primary-fixed/20"
           >
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-on-primary shadow-md group-hover:scale-110">
               <MaterialIcon name="photo_camera" className="text-3xl" />
             </div>
-            <span className="mb-1 text-headline-md text-primary">{t("tapCamera")}</span>
+            <span className="mb-1 text-headline-md text-primary">
+              {photoName || t("tapCamera")}
+            </span>
             <span className="text-body-sm text-on-surface-variant">{t("uploadHint")}</span>
           </button>
           <div className="flex flex-col justify-center rounded-xl border border-outline-variant bg-surface-container-low p-4">
@@ -85,9 +291,33 @@ export function QuoteForm() {
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
             <label className="mb-2 block text-technical-data text-on-surface-variant">
+              {t("company")}
+            </label>
+            <input
+              name="company"
+              type="text"
+              placeholder={t("companyPlaceholder")}
+              className="w-full rounded-lg border-2 border-outline-variant bg-surface px-4 py-3 text-body-md text-on-surface focus:border-primary focus:ring-0"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-technical-data text-on-surface-variant">
+              {t("contact")}
+            </label>
+            <input
+              name="contact"
+              type="tel"
+              required
+              placeholder={t("contactPlaceholder")}
+              className="w-full rounded-lg border-2 border-outline-variant bg-surface px-4 py-3 text-body-md text-on-surface focus:border-primary focus:ring-0"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-technical-data text-on-surface-variant">
               {t("vin")}
             </label>
             <input
+              name="vin"
               type="text"
               placeholder="e.g. LGMG9562021004"
               className="w-full rounded-lg border-2 border-outline-variant bg-surface px-4 py-3 text-body-md text-on-surface focus:border-primary focus:ring-0"
@@ -97,11 +327,18 @@ export function QuoteForm() {
             <label className="mb-2 block text-technical-data text-on-surface-variant">
               {t("brand")}
             </label>
-            <select className="w-full rounded-lg border-2 border-outline-variant bg-surface px-4 py-3 text-body-md text-on-surface focus:border-primary focus:ring-0">
+            <select
+              name="brand"
+              className="w-full rounded-lg border-2 border-outline-variant bg-surface px-4 py-3 text-body-md text-on-surface focus:border-primary focus:ring-0"
+            >
               <option>{t("selectBrand")}</option>
               <option>SDLG</option>
+              <option>Lonking</option>
               <option>Liugong</option>
               <option>XCMG</option>
+              <option>XGMA</option>
+              <option>SANY</option>
+              <option>Shantui</option>
               <option>ZF</option>
               <option>{t("other")}</option>
             </select>
@@ -111,6 +348,7 @@ export function QuoteForm() {
               {t("notes")}
             </label>
             <textarea
+              name="notes"
               rows={3}
               placeholder={t("notesPlaceholder")}
               className="w-full rounded-lg border-2 border-outline-variant bg-surface px-4 py-3 text-body-md text-on-surface focus:border-primary focus:ring-0"
@@ -121,11 +359,79 @@ export function QuoteForm() {
 
       <button
         type="submit"
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-4 text-headline-md text-on-primary shadow-md hover:bg-surface-tint"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] py-4 text-headline-md text-white shadow-md hover:brightness-110"
       >
-        <MaterialIcon name="send" />
+        <WhatsAppIcon className="h-6 w-6" />
         {t("submit")}
       </button>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={() => void onSms()}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-outline-variant bg-surface-container-lowest py-3 text-technical-data text-on-surface hover:border-primary"
+        >
+          <MaterialIcon name="sms" className="text-primary" />
+          {t("submitSms")}
+        </button>
+        <a
+          href={siteConfig.facebook}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-outline-variant bg-surface-container-lowest py-3 text-technical-data text-on-surface hover:border-primary"
+        >
+          <FacebookIcon className="h-5 w-5" />
+          Facebook
+        </a>
+      </div>
+      {smsHint && smsDraft ? (
+        <div className="space-y-3 rounded-xl border-2 border-primary bg-primary-fixed/10 p-4">
+          <h3 className="text-headline-md text-on-surface">{t("smsPanelTitle")}</h3>
+          <p className="text-body-sm text-on-surface-variant">{t("smsDesktopHint")}</p>
+          <p className="text-technical-data font-bold text-on-surface">
+            {t("smsTo")} {siteConfig.phone}
+          </p>
+          <textarea
+            readOnly
+            value={smsDraft}
+            rows={6}
+            className="w-full rounded-lg border-2 border-outline-variant bg-surface px-3 py-2 font-mono text-body-sm text-on-surface"
+          />
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <a
+              href={inquirySmsHref(smsDraft, false)}
+              className="flex items-center justify-center gap-1 rounded-xl border-2 border-outline-variant bg-surface py-3 text-technical-data text-on-surface hover:border-primary"
+            >
+              <MaterialIcon name="sms" className="text-primary" />
+              {t("smsOpenApp")}
+            </a>
+            <button
+              type="button"
+              onClick={() => void copySms(smsDraft)}
+              className="flex items-center justify-center gap-1 rounded-xl border-2 border-outline-variant bg-surface py-3 text-technical-data text-on-surface hover:border-primary"
+            >
+              <MaterialIcon name="content_copy" className="text-primary" />
+              {smsCopied ? t("smsCopied") : t("smsCopy")}
+            </button>
+            <a
+              href={inquiryWhatsAppHref(smsDraft)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1 rounded-xl bg-[#25D366] py-3 text-technical-data text-white hover:brightness-110"
+            >
+              <WhatsAppIcon className="h-5 w-5" />
+              {t("smsSendWhatsApp")}
+            </a>
+          </div>
+        </div>
+      ) : null}
+      <a
+        href={siteConfig.tel}
+        className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-outline-variant bg-surface-container-lowest py-3 text-technical-data text-on-surface hover:border-primary"
+      >
+        <MaterialIcon name="call" className="text-primary" />
+        {t("callNow")} {siteConfig.phone}
+      </a>
 
       <p className="text-center text-body-sm text-on-surface-variant">
         {t("needHelp")}{" "}
