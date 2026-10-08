@@ -16,6 +16,7 @@ import { routing } from "@/i18n/routing";
 import { AddToQuoteButton } from "@/components/quote/AddToQuoteButton";
 import { ProductBackButton } from "@/components/product/ProductBackButton";
 import { addToQuoteButtonClass } from "@/lib/quote-button";
+import { localePath, pageAlternates } from "@/lib/locales";
 
 type PageProps = {
   params: Promise<{ locale: string; category: string; slug: string }>;
@@ -36,6 +37,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: `${product.partNumber} ${name} | OEM`,
     description: loc(locale, product.description.en, product.description.zh),
+    alternates: pageAlternates(locale, `/parts/${category}/${slug}`),
     openGraph: {
       images: [{ url: product.image }],
     },
@@ -53,7 +55,7 @@ export default async function ProductPage({ params }: PageProps) {
   const tNav = await getTranslations("nav");
   const name = loc(locale, product.name.en, product.name.zh);
   const description = loc(locale, product.description.en, product.description.zh);
-  const productUrl = `${siteConfig.url}/parts/${categorySlug}/${slug}`;
+  const productUrl = `${siteConfig.url}${localePath(locale, `/parts/${categorySlug}/${slug}`)}`;
 
   return (
     <SiteShell showFloatingActions={false} hideBottomNav>
@@ -64,15 +66,13 @@ export default async function ProductPage({ params }: PageProps) {
           name,
           sku: product.partNumber,
           description,
-          image: product.image,
+          image: `${siteConfig.url}${product.image}`,
           brand: { "@type": "Brand", name: product.brands.join(", ") },
           offers: {
             "@type": "Offer",
             availability: product.inStock
               ? "https://schema.org/InStock"
               : "https://schema.org/OutOfStock",
-            priceCurrency: "USD",
-            price: "0",
             url: productUrl,
           },
         }}

@@ -11,6 +11,7 @@ import { categories, findCategoryBrand, getCategory } from "@/lib/data/categorie
 import { getProductsByCategory } from "@/lib/data/products";
 import { loc } from "@/lib/locale";
 import { routing } from "@/i18n/routing";
+import { pageAlternates } from "@/lib/locales";
 
 type PageProps = {
   params: Promise<{ locale: string; category: string }>;
@@ -40,6 +41,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       locale === "zh"
         ? `${description} 向临沂松昱国际贸易有限公司询盘。`
         : `${description} Send an inquiry to Linyi Songyu International Trade Co., Ltd.`,
+    alternates: pageAlternates(locale, `/parts/${slug}`),
   };
 }
 

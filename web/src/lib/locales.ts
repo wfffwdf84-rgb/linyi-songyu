@@ -95,6 +95,13 @@ export function languageAlternateHrefs(path = "/") {
   return map;
 }
 
+export function pageAlternates(locale: string, path: string) {
+  return {
+    canonical: localePath(locale, path),
+    languages: languageAlternateHrefs(path),
+  };
+}
+
 export function localeFontClass(locale: string) {
   if (locale === "zh") return "font-zh";
   if (locale === "ar") return "font-ar";

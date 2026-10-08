@@ -8,7 +8,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { VideoUploadForm } from "@/components/quote/VideoUploadForm";
 import { siteConfig } from "@/lib/site";
 import { routing } from "@/i18n/routing";
-import { localePath } from "@/lib/locales";
+import { localePath, pageAlternates } from "@/lib/locales";
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -24,6 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: t("title"),
     description: t("description"),
+    alternates: pageAlternates(locale, "/upload-video"),
   };
 }
 

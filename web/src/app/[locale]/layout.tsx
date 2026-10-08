@@ -7,7 +7,6 @@ import { routing } from "@/i18n/routing";
 import { siteConfig } from "@/lib/site";
 import {
   isAppLocale,
-  languageAlternateHrefs,
   localeFontClass,
   localeHtmlLang,
   localeOg,
@@ -66,9 +65,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: isZh ? siteConfig.nameZh : siteConfig.name,
       description: t("description"),
       images: [{ url: siteConfig.logo, alt: isZh ? siteConfig.shortNameZh : siteConfig.shortName }],
-    },
-    alternates: {
-      languages: languageAlternateHrefs("/"),
     },
     robots: { index: true, follow: true },
   };

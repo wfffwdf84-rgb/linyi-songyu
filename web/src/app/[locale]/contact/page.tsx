@@ -7,7 +7,7 @@ import { QuoteForm } from "@/components/quote/QuoteForm";
 import { QuoteSummary } from "@/components/quote/QuoteSummary";
 import { siteConfig } from "@/lib/site";
 import { routing } from "@/i18n/routing";
-import { localePath } from "@/lib/locales";
+import { localePath, pageAlternates } from "@/lib/locales";
 import { parseInquiryTypes } from "@/lib/inquiry";
 
 type Props = {
@@ -25,6 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: t("title"),
     description: t("description"),
+    alternates: pageAlternates(locale, "/contact"),
   };
 }
 

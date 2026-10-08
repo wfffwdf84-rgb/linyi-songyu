@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { SiteShell } from "@/components/layout/SiteShell";
@@ -9,10 +10,18 @@ import { HomeHero } from "@/components/home/HomeHero";
 import { HomeInquiry } from "@/components/home/HomeInquiry";
 import { HomeWhyUs } from "@/components/home/HomeWhyUs";
 import { organizationSameAs, siteConfig } from "@/lib/site";
+import { pageAlternates } from "@/lib/locales";
 
 type Props = {
   params: Promise<{ locale: string }>;
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    alternates: pageAlternates(locale, "/"),
+  };
+}
 
 export default async function HomePage({ params }: Props) {
   const { locale } = await params;

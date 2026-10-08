@@ -1,0 +1,23 @@
+# Never upload local secrets into a deployment.
+# .env.local holds a live Vercel Blob read/write token and the factory-upload password.
+.env
+.env.*
+!.env.example
+
+# Local build output and dependencies (Vercel installs and builds its own).
+.next
+node_modules
+
+# Vercel CLI project link (contains project/org ids only, keeps parity with .gitignore).
+.vercel
+
+# TypeScript incremental build state.
+*.tsbuildinfo
+
+# Local factory video uploads; production stores these in Vercel Blob.
+public/videos/factory/*
+!public/videos/factory/.gitkeep
+
+# OS / editor noise.
+.DS_Store
+Thumbs.db

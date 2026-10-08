@@ -7,6 +7,7 @@ import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { FactoryGallery } from "@/components/home/FactoryGallery";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
 import { WhatsAppIcon } from "@/components/ui/BrandIcons";
+import { pageAlternates } from "@/lib/locales";
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -18,6 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: t("title"),
     description: t("description"),
+    alternates: pageAlternates(locale, "/quality-logistics"),
   };
 }
 

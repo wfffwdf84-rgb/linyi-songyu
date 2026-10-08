@@ -7,6 +7,7 @@ import { ProductSearchForm } from "@/components/catalog/ProductSearchForm";
 import { SiteShell } from "@/components/layout/SiteShell";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { searchProducts } from "@/lib/data/products";
+import { pageAlternates } from "@/lib/locales";
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -18,10 +19,15 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const query = await searchParams;
   const q = Array.isArray(query.q) ? query.q[0] : query.q;
   const t = await getTranslations({ locale, namespace: "catalog" });
-  if (!q?.trim()) return {};
+  if (!q?.trim()) {
+    return {
+      alternates: pageAlternates(locale, "/parts"),
+    };
+  }
   return {
     title: t("searchTitle", { q: q.trim() }),
     robots: { index: false, follow: true },
+    alternates: pageAlternates(locale, "/parts"),
   };
 }
 
