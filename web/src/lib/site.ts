@@ -5,7 +5,7 @@ export const siteConfig = {
   shortNameZh: "临沂松昱",
   description:
     "OEM-compatible heavy machinery spare parts supplier. Transmission assemblies, brake components, and radiators with 24-48H dispatch from Linyi Hub.",
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://linyi-songyu.vercel.app",
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://songyuheavyparts.com",
   email: "wfffwdf84@gmail.com",
   phone: "+86 175 6815 5882",
   whatsappNumber: "8617568155882",
