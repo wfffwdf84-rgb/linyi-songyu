@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
-import { inquiryStorageConfigured, saveInquiry } from "@/lib/inquiry-store";
+import { NextResponse, after } from "next/server";
+import { inquiryStorageConfigured, rewriteInquiry, saveInquiry } from "@/lib/inquiry-store";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { toChinese } from "@/lib/translate";
 
 function text(value: unknown, limit = 120) {
   if (typeof value !== "string") return "";
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { id, receivedAt } = await saveInquiry({
+    const { id, receivedAt, record } = await saveInquiry({
       locale: text(body.locale, 8),
       page: text(body.page, 200),
       types,
@@ -70,6 +71,26 @@ export async function POST(request: Request) {
       photoName: text(body.photoName, 200),
       items,
     });
+
+    // Render the lead in Chinese after responding, so the WhatsApp hand-off is
+    // never delayed by a translation call. A failure just leaves the original.
+    after(async () => {
+      try {
+        const [messageZh, notesZh] = await Promise.all([
+          record.message ? toChinese(record.message) : Promise.resolve(""),
+          record.notes ? toChinese(record.notes) : Promise.resolve(""),
+        ]);
+        if (!messageZh && !notesZh) return;
+        await rewriteInquiry({
+          ...record,
+          ...(messageZh ? { messageZh } : {}),
+          ...(notesZh ? { notesZh } : {}),
+        });
+      } catch (error) {
+        console.error("inquiry translation failed", error);
+      }
+    });
+
     return NextResponse.json({
       ok: true,
       reference: id.slice(0, 8).toUpperCase(),

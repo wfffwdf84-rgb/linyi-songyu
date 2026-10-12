@@ -183,12 +183,24 @@ export default async function InquiryDeskPage({ params }: Props) {
                       <div className="sm:col-span-2">
                         <dt className="text-on-surface-variant">{tx.fieldMessage}</dt>
                         <dd className="whitespace-pre-wrap text-on-surface">{inquiry.message}</dd>
+                        {inquiry.messageZh ? (
+                          <dd className="mt-1 flex gap-2 whitespace-pre-wrap border-s-2 border-primary/50 ps-3 text-on-surface-variant">
+                            <MaterialIcon name="translate" className="mt-0.5 shrink-0 text-[16px] text-primary" />
+                            <span>{inquiry.messageZh}</span>
+                          </dd>
+                        ) : null}
                       </div>
                     ) : null}
                     {inquiry.notes ? (
                       <div className="sm:col-span-2">
                         <dt className="text-on-surface-variant">{tx.fieldNotes}</dt>
                         <dd className="whitespace-pre-wrap text-on-surface">{inquiry.notes}</dd>
+                        {inquiry.notesZh ? (
+                          <dd className="mt-1 flex gap-2 whitespace-pre-wrap border-s-2 border-primary/50 ps-3 text-on-surface-variant">
+                            <MaterialIcon name="translate" className="mt-0.5 shrink-0 text-[16px] text-primary" />
+                            <span>{inquiry.notesZh}</span>
+                          </dd>
+                        ) : null}
                       </div>
                     ) : null}
                   </dl>

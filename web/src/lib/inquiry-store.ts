@@ -20,6 +20,9 @@ export type StoredInquiry = {
   vin: string;
   brand: string;
   message: string;
+  /** Chinese rendering of message/notes, filled in after the lead is stored. */
+  messageZh?: string;
+  notesZh?: string;
   notes: string;
   photoName: string;
   items: InquiryItem[];
@@ -62,21 +65,37 @@ function decrypt(payload: Buffer): StoredInquiry {
   return JSON.parse(json) as StoredInquiry;
 }
 
+export function inquiryPath(receivedAt: string, id: string) {
+  return `${PREFIX}${receivedAt.replace(/[:.]/g, "-")}-${id}.json`;
+}
+
+function encode(record: StoredInquiry) {
+  // A Buffer's ArrayBufferLike does not satisfy BlobPart, so copy into a plain view.
+  return new Blob([new Uint8Array(encrypt(record))]);
+}
+
 export async function saveInquiry(
   input: Omit<StoredInquiry, "id" | "receivedAt">,
-): Promise<{ id: string; receivedAt: string }> {
+): Promise<{ id: string; receivedAt: string; record: StoredInquiry }> {
   const id = randomUUID();
   const receivedAt = new Date().toISOString();
   const record: StoredInquiry = { id, receivedAt, ...input };
-  const stamp = receivedAt.replace(/[:.]/g, "-");
-  // A Buffer's ArrayBufferLike does not satisfy BlobPart, so copy into a plain view.
-  const bytes = new Uint8Array(encrypt(record));
-  await put(`${PREFIX}${stamp}-${id}.json`, new Blob([bytes]), {
+  await put(inquiryPath(receivedAt, id), encode(record), {
     access: "public", // the object itself is ciphertext; the store is public
     contentType: "application/octet-stream",
     addRandomSuffix: false,
   });
-  return { id, receivedAt };
+  return { id, receivedAt, record };
+}
+
+/** Overwrites a stored lead in place, used to attach its Chinese rendering. */
+export async function rewriteInquiry(record: StoredInquiry) {
+  await put(inquiryPath(record.receivedAt, record.id), encode(record), {
+    access: "public",
+    contentType: "application/octet-stream",
+    addRandomSuffix: false,
+    allowOverwrite: true,
+  });
 }
 
 export async function listInquiries(): Promise<StoredInquiry[]> {
