@@ -10,14 +10,14 @@ const featured = [
     titleKey: "catTransmission" as const,
     descKey: "catTransmissionDesc" as const,
     href: "/parts/transmission-systems" as const,
-    image: "/images/products/md-sdlg-953n.png",
+    image: "/images/products/md-sdlg-953n.webp",
     slug: "transmission-systems",
   },
   {
     titleKey: "catCooling" as const,
     descKey: "catCoolingDesc" as const,
     href: "/parts/cooling-parts" as const,
-    image: "/images/products/rad-sdlg-953-2.png",
+    image: "/images/products/rad-sdlg-953-2.webp",
     slug: "cooling-parts",
   },
   {
@@ -35,14 +35,14 @@ const more = [
     titleKey: "catStructural" as const,
     descKey: "catStructuralDesc" as const,
     href: "/parts/structural-components" as const,
-    image: "/images/products/sf-b-lonking-855.png",
+    image: "/images/products/sf-b-lonking-855.webp",
     slug: "structural-components",
   },
   {
     titleKey: "catChinese" as const,
     descKey: "catChineseDesc" as const,
     href: "/parts/chinese-brand-parts" as const,
-    image: "/images/products/md-liugong-50c.png",
+    image: "/images/products/md-liugong-50c.webp",
     slug: "chinese-brand-parts",
   },
 ];

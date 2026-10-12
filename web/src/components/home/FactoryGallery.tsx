@@ -4,12 +4,12 @@ import { Link } from "@/i18n/navigation";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
 
 const factoryShots = [
-  { src: "/images/factory/factory-exterior.jpg", key: "shot1" },
-  { src: "/images/factory/heat-treatment.jpg", key: "shot2" },
-  { src: "/images/factory/env-equipment.jpg", key: "shot3" },
-  { src: "/images/factory/production-line.jpg", key: "shot4" },
-  { src: "/images/factory/cmm-inspection.jpg", key: "shot5" },
-  { src: "/images/factory/workshop.jpg", key: "shot6" },
+  { src: "/images/factory/factory-exterior.webp", key: "shot1" },
+  { src: "/images/factory/heat-treatment.webp", key: "shot2" },
+  { src: "/images/factory/env-equipment.webp", key: "shot3" },
+  { src: "/images/factory/production-line.webp", key: "shot4" },
+  { src: "/images/factory/cmm-inspection.webp", key: "shot5" },
+  { src: "/images/factory/workshop.webp", key: "shot6" },
 ] as const;
 
 type FactoryGalleryProps = {

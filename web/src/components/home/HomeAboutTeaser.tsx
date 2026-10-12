@@ -27,7 +27,7 @@ export async function HomeAboutTeaser() {
         <div className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-low p-4 shadow-sm md:p-6">
           <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-surface-container">
             <Image
-              src="/images/factory/factory-exterior.jpg"
+              src="/images/factory/factory-exterior.webp"
               alt={t("shot1")}
               fill
               quality={100}

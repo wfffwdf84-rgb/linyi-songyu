@@ -89,7 +89,7 @@ export default async function QualityLogisticsPage({ params }: Props) {
             <figure>
               <div className="relative aspect-video w-full overflow-hidden rounded border border-outline-variant bg-surface-container">
                 <Image
-                  src="/images/factory/cmm-inspection.jpg"
+                  src="/images/factory/cmm-inspection.webp"
                   alt={t("photoCaption")}
                   fill
                   quality={100}
@@ -144,7 +144,7 @@ export default async function QualityLogisticsPage({ params }: Props) {
           <div className="mx-auto grid max-w-container-max grid-cols-1 items-center gap-12 px-margin-mobile md:grid-cols-2 md:px-margin-desktop">
             <div className="relative order-2 aspect-video overflow-hidden rounded border border-outline-variant bg-surface-container md:order-1">
               <Image
-                src="/images/factory/factory-exterior.jpg"
+                src="/images/factory/factory-exterior.webp"
                 alt={t("hubTitle")}
                 fill
                 quality={100}

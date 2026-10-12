@@ -10,10 +10,10 @@ export async function HomeHero() {
   return (
     <HeroCarousel
       slides={[
-        { src: "/images/hero-warehouse-parts.jpg", alt: t("heroAltLinkage"), objectPosition: "object-[42%_78%] scale-[1.22]" },
-        { src: "/images/hero-radiator-field.jpg", alt: t("heroAltRadiator") },
-        { src: "/images/hero-transmission-assembly.jpg", alt: t("heroAltTransmission"), objectPosition: "object-center" },
-        { src: "/images/hero-cast-housing.jpg", alt: t("heroAltCastHousing"), objectPosition: "object-[55%_center]" },
+        { src: "/images/hero-warehouse-parts.webp", alt: t("heroAltLinkage"), objectPosition: "object-[42%_78%] scale-[1.22]" },
+        { src: "/images/hero-radiator-field.webp", alt: t("heroAltRadiator") },
+        { src: "/images/hero-transmission-assembly.webp", alt: t("heroAltTransmission"), objectPosition: "object-center" },
+        { src: "/images/hero-cast-housing.webp", alt: t("heroAltCastHousing"), objectPosition: "object-[55%_center]" },
       ]}
       prevLabel={t("heroPrev")}
       nextLabel={t("heroNext")}

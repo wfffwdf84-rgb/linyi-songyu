@@ -17,6 +17,7 @@ import { AddToQuoteButton } from "@/components/quote/AddToQuoteButton";
 import { ProductBackButton } from "@/components/product/ProductBackButton";
 import { addToQuoteButtonClass } from "@/lib/quote-button";
 import { localePath, pageAlternates } from "@/lib/locales";
+import { socialCard } from "@/lib/social-card";
 
 type PageProps = {
   params: Promise<{ locale: string; category: string; slug: string }>;
@@ -39,7 +40,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description: loc(locale, product.description.en, product.description.zh),
     alternates: pageAlternates(locale, `/parts/${category}/${slug}`),
     openGraph: {
-      images: [{ url: product.image }],
+      images: [{ url: socialCard(product.image) }],
     },
   };
 }
@@ -60,8 +61,8 @@ export default async function ProductPage({ params }: PageProps) {
   // everywhere else, so the QC shot matches the part being described.
   const qcImage =
     categorySlug === "cooling-parts"
-      ? "/images/factory/cmm-radiator.jpg"
-      : "/images/factory/cmm-inspection.jpg";
+      ? "/images/factory/cmm-radiator.webp"
+      : "/images/factory/cmm-inspection.webp";
 
   return (
     <SiteShell showFloatingActions={false} hideBottomNav>
