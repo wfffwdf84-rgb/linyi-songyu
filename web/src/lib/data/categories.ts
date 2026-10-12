@@ -72,8 +72,8 @@ export const categories: Category[] = [
     name: { en: "Radiators", zh: "散热器" },
     icon: "device_thermostat",
     description: {
-      en: "Leak-proof, vibration-resistant radiators for SDLG, XCMG, Liugong, XGMA, Changlin, Daewoo, and Doosan machines.",
-      zh: "防漏抗震型散热器，适配临工、徐工、柳工、厦工、常林、大宇与斗山机型。",
+      en: "Leak-proof, vibration-resistant radiators for SDLG, XCMG, Liugong, XGMA, Changlin, Daewoo, Doosan, and Kobelco machines.",
+      zh: "防漏抗震型散热器，适配临工、徐工、柳工、厦工、常林、大宇、斗山与神钢机型。",
     },
     filters: [
       { id: "brand:SDLG", en: "SDLG", zh: "临工" },
@@ -83,6 +83,7 @@ export const categories: Category[] = [
       { id: "brand:Changlin", en: "Changlin", zh: "常林" },
       { id: "brand:Doosan", en: "Doosan", zh: "斗山" },
       { id: "brand:Daewoo", en: "Daewoo", zh: "大宇" },
+      { id: "brand:Kobelco", en: "Kobelco", zh: "神钢" },
       { id: "inStock", en: "In Stock", zh: "现货" },
     ],
   },
