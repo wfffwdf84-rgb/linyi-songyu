@@ -15,6 +15,8 @@ import {
 import { QuoteListProvider } from "@/components/quote/QuoteListProvider";
 import { ScrollMemory } from "@/components/layout/ScrollMemory";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({
   subsets: ["latin", "latin-ext", "cyrillic"],
@@ -107,6 +109,9 @@ export default async function LocaleLayout({ children, params }: Props) {
             {children}
           </QuoteListProvider>
         </NextIntlClientProvider>
+        {/* Cookieless visitor analytics and real Core Web Vitals, straight from Vercel. */}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
