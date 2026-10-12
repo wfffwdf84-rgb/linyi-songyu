@@ -26,6 +26,9 @@ export type DeskText = {
   fieldParts: string;
   fieldMessage: string;
   fieldNotes: string;
+  ipLocation: string;
+  phoneLocation: string;
+  localTimeLabel: string;
   emptyTitle: string;
   emptyBody: string;
   missingStorage: string;
@@ -55,6 +58,9 @@ const EN: DeskText = {
   fieldParts: "Parts",
   fieldMessage: "Message",
   fieldNotes: "Notes",
+  ipLocation: "IP location",
+  phoneLocation: "Number country",
+  localTimeLabel: "local time",
   emptyTitle: "No inquiries yet",
   emptyBody:
     "Every submission on the contact page is stored here from now on, including the ones that never reach WhatsApp.",
@@ -85,6 +91,9 @@ const ZH: DeskText = {
   fieldParts: "零件",
   fieldMessage: "留言内容",
   fieldNotes: "备注",
+  ipLocation: "IP 归属",
+  phoneLocation: "号码归属",
+  localTimeLabel: "当地时间",
   emptyTitle: "还没有收到询盘",
   emptyBody: "从现在起，联系页上的每一次提交都会存在这里，包括没能发到 WhatsApp 的那些。",
   missingStorage: "服务器未配置 BLOB_READ_WRITE_TOKEN，无法存储询盘。",

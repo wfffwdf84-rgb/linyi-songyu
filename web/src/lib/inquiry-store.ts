@@ -25,6 +25,10 @@ export type StoredInquiry = {
   notesZh?: string;
   notes: string;
   photoName: string;
+  /** Country/city/time zone Vercel derived from the visitor's IP. */
+  ipCountry?: string;
+  ipCity?: string;
+  ipTimezone?: string;
   items: InquiryItem[];
 };
 

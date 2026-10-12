@@ -2,6 +2,7 @@ import { NextResponse, after } from "next/server";
 import { inquiryStorageConfigured, rewriteInquiry, saveInquiry } from "@/lib/inquiry-store";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { toChinese } from "@/lib/translate";
+import { readVisitorGeo } from "@/lib/visitor-geo";
 
 function text(value: unknown, limit = 120) {
   if (typeof value !== "string") return "";
@@ -57,6 +58,7 @@ export async function POST(request: Request) {
   }
 
   try {
+    const geo = readVisitorGeo(request.headers);
     const { id, receivedAt, record } = await saveInquiry({
       locale: text(body.locale, 8),
       page: text(body.page, 200),
@@ -69,6 +71,9 @@ export async function POST(request: Request) {
       message,
       notes: text(body.notes, 2000),
       photoName: text(body.photoName, 200),
+      ipCountry: geo.country,
+      ipCity: geo.city,
+      ipTimezone: geo.timezone,
       items,
     });
 

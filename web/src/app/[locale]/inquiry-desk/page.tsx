@@ -9,6 +9,8 @@ import { isInquiryDeskAuthed } from "@/lib/inquiry-auth";
 import { inquiryStorageConfigured, inquiriesReadAt, listInquiries } from "@/lib/inquiry-store";
 import { InquiryDeskMarkRead } from "@/components/admin/InquiryDeskMarkRead";
 import { deskText } from "@/lib/desk-text";
+import { phoneCountry } from "@/lib/phone-country";
+import { countryFlag, countryLabel, localTime } from "@/lib/visitor-geo";
 
 export const dynamic = "force-dynamic";
 
@@ -99,6 +101,9 @@ export default async function InquiryDeskPage({ params }: Props) {
             {unread.length > 0 ? <InquiryDeskMarkRead upTo={unread[0].receivedAt} /> : null}
             {inquiries.map((inquiry) => {
               const wa = whatsappHref(inquiry.contact);
+              const ipCountry = inquiry.ipCountry ?? "";
+              const numberCountry = phoneCountry(inquiry.contact);
+              const placedAt = localTime(inquiry.receivedAt, inquiry.ipTimezone ?? "");
               return (
                 <li
                   key={inquiry.id}
@@ -143,6 +148,33 @@ export default async function InquiryDeskPage({ params }: Props) {
                       <span className="text-body-md text-on-surface-variant">{inquiry.company}</span>
                     ) : null}
                   </div>
+
+                  {ipCountry || numberCountry || placedAt ? (
+                    <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-technical-data text-on-surface-variant">
+                      {ipCountry ? (
+                        <span>
+                          {tx.ipLocation}{" "}
+                          <span className="text-on-surface">
+                            {countryFlag(ipCountry)} {countryLabel(ipCountry, locale)}
+                          </span>
+                          {inquiry.ipCity ? ` · ${inquiry.ipCity}` : ""}
+                        </span>
+                      ) : null}
+                      {numberCountry ? (
+                        <span>
+                          {tx.phoneLocation}{" "}
+                          <span className="text-on-surface">
+                            {countryFlag(numberCountry)} {countryLabel(numberCountry, locale)}
+                          </span>
+                        </span>
+                      ) : null}
+                      {placedAt ? (
+                        <span>
+                          {tx.localTimeLabel} <span className="text-on-surface">{placedAt}</span>
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
 
                   <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-body-sm sm:grid-cols-2">
                     {inquiry.types.length > 0 ? (
