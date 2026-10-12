@@ -56,6 +56,12 @@ export default async function ProductPage({ params }: PageProps) {
   const name = loc(locale, product.name.en, product.name.zh);
   const description = loc(locale, product.description.en, product.description.zh);
   const productUrl = `${siteConfig.url}${localePath(locale, `/parts/${categorySlug}/${slug}`)}`;
+  // The CMM photo shows a radiator on radiator pages and a transmission housing
+  // everywhere else, so the QC shot matches the part being described.
+  const qcImage =
+    categorySlug === "cooling-parts"
+      ? "/images/factory/cmm-radiator.jpg"
+      : "/images/factory/cmm-inspection.jpg";
 
   return (
     <SiteShell showFloatingActions={false} hideBottomNav>
@@ -206,7 +212,7 @@ export default async function ProductPage({ params }: PageProps) {
               className="group relative block aspect-video overflow-hidden rounded-xl border border-outline-variant"
             >
               <Image
-                src="/images/factory/cmm-inspection.jpg"
+                src={qcImage}
                 alt={t("factoryTest")}
                 fill
                 quality={100}
