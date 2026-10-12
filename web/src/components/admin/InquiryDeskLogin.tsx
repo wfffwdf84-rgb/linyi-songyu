@@ -2,15 +2,9 @@
 
 import { useState, type FormEvent } from "react";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
+import type { DeskText } from "@/lib/desk-text";
 
-const MESSAGES: Record<string, string> = {
-  unauthorized: "Wrong password.",
-  too_many_attempts: "Too many attempts. Try again later.",
-  not_configured: "FACTORY_VIDEO_PASSWORD is not set on this deployment.",
-  network: "Network error.",
-};
-
-export function InquiryDeskLogin() {
+export function InquiryDeskLogin({ text }: { text: DeskText }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -30,29 +24,38 @@ export function InquiryDeskLogin() {
         return;
       }
       const data = (await response.json().catch(() => null)) as { error?: string } | null;
-      setError(MESSAGES[data?.error ?? ""] ?? MESSAGES.unauthorized);
+      const messages: Record<string, string> = {
+        unauthorized: text.errorUnauthorized,
+        too_many_attempts: text.errorRate,
+        not_configured: text.errorNotConfigured,
+      };
+      setError(messages[data?.error ?? ""] ?? text.errorUnauthorized);
     } catch {
-      setError(MESSAGES.network);
+      setError(text.errorNetwork);
     }
     setBusy(false);
   }
 
   return (
-    <form onSubmit={onSubmit} className="max-w-md space-y-4 rounded-xl border border-outline-variant bg-surface-container-lowest p-6">
+    <form
+      onSubmit={onSubmit}
+      className="max-w-md space-y-4 rounded-xl border border-outline-variant bg-surface-container-lowest p-6"
+    >
       <h1 className="flex items-center gap-2 text-headline-md text-on-surface">
         <MaterialIcon name="inbox" className="text-primary" />
-        Inquiry desk
+        {text.title}
       </h1>
-      <p className="text-body-sm text-on-surface-variant">
-        Enter the factory password to read captured inquiries.
-      </p>
+      <p className="text-body-sm text-on-surface-variant">{text.signInLead}</p>
+      <label className="block text-technical-data text-on-surface-variant" htmlFor="desk-password">
+        {text.passwordLabel}
+      </label>
       <input
+        id="desk-password"
         type="password"
         value={password}
         onChange={(event) => setPassword(event.target.value)}
         autoComplete="current-password"
         className="w-full rounded-lg border-2 border-outline-variant bg-surface px-4 py-3 text-body-md text-on-surface focus:border-primary focus:ring-0"
-        placeholder="Password"
       />
       {error ? <p className="text-body-sm text-error">{error}</p> : null}
       <button
@@ -60,7 +63,7 @@ export function InquiryDeskLogin() {
         disabled={busy || password.length === 0}
         className="w-full rounded-xl bg-primary py-3 text-headline-md text-on-primary disabled:opacity-60"
       >
-        {busy ? "Checking..." : "Open"}
+        {busy ? text.checking : text.open}
       </button>
     </form>
   );
