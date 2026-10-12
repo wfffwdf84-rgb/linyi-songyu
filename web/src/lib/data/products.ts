@@ -588,6 +588,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "SDLG 953-2", zh: "临工953-2" } },
       { labelKey: "dimensions", value: { en: "930×1000 mm", zh: "930×1000mm" } },
       { labelKey: "waterPort", value: { en: "Top right / bottom right Ø45", zh: "上右下右45" } },
@@ -618,6 +619,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "XCMG 321", zh: "徐工321" } },
       { labelKey: "dimensions", value: { en: "760×860 mm", zh: "760×860mm" } },
       { labelKey: "waterPort", value: { en: "Top right / bottom left bent Ø45", zh: "上右下左弯45" } },
@@ -648,6 +650,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "XCMG 50GL", zh: "徐工50GL" } },
       { labelKey: "dimensions", value: { en: "900×1070 mm", zh: "900×1070mm" } },
       { labelKey: "waterPort", value: { en: "Top right Ø55 / bottom center Ø58", zh: "上右55下中58" } },
@@ -678,6 +681,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "XGMA 955", zh: "厦工955" } },
       { labelKey: "dimensions", value: { en: "860×1060 mm", zh: "860×1060mm" } },
       { labelKey: "waterPort", value: { en: "Top left / bottom right bent Ø58", zh: "上左下右弯58" } },
@@ -708,6 +712,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "SDLG 953", zh: "临工953" } },
       { labelKey: "dimensions", value: { en: "900×1040 mm", zh: "900×1040mm" } },
       { labelKey: "waterPort", value: { en: "Top right / bottom right Ø45", zh: "上右下右45" } },
@@ -738,6 +743,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Daewoo 500-7", zh: "大宇500-7" } },
       { labelKey: "dimensions", value: { en: "1125×1280 mm", zh: "1125×1280mm" } },
       { labelKey: "waterPort", value: { en: "Top left / bottom right Ø58", zh: "上左下右58" } },
@@ -768,6 +774,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "XCMG 300F", zh: "徐工300F" } },
       { labelKey: "dimensions", value: { en: "760×920 mm", zh: "760×920mm" } },
       { labelKey: "waterPort", value: { en: "Top right / bottom left bent Ø45", zh: "上右下左弯45" } },
@@ -798,6 +805,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "SDLG 936", zh: "临工936" } },
       { labelKey: "dimensions", value: { en: "760×990 mm", zh: "760×990mm" } },
       { labelKey: "waterPort", value: { en: "Top right / bottom left bent Ø45", zh: "上右下左弯45" } },
@@ -828,6 +836,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Liugong 50CN", zh: "柳工50CN" } },
       { labelKey: "dimensions", value: { en: "880×990 mm", zh: "880×990mm" } },
       { labelKey: "waterPort", value: { en: "Top right / bottom right Ø50", zh: "上右下右50" } },
@@ -858,6 +867,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Changlin 956", zh: "常林956" } },
       { labelKey: "dimensions", value: { en: "930×1040 mm", zh: "930×1040mm" } },
       { labelKey: "waterPort", value: { en: "Top right / bottom right Ø45", zh: "上右下右45" } },
@@ -888,6 +898,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "XCMG 500F", zh: "徐工500F" } },
       { labelKey: "dimensions", value: { en: "900×1050 mm", zh: "900×1050mm" } },
       { labelKey: "waterPort", value: { en: "Top right Ø58 / bottom left Ø50", zh: "上右58下左50" } },
@@ -918,6 +929,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "XCMG 500K", zh: "徐工500K" } },
       { labelKey: "dimensions", value: { en: "900×1080 mm", zh: "900×1080mm" } },
       { labelKey: "waterPort", value: { en: "Top right / bottom left Ø50", zh: "上右下左50" } },
@@ -947,6 +959,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Doosan DH55-5", zh: "斗山DH55-5" } },
       { labelKey: "dimensions", value: { en: "500×765×85 mm", zh: "500×765×85mm" } },
     ],
@@ -975,6 +988,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Doosan DH55-7", zh: "斗山DH55-7" } },
       { labelKey: "dimensions", value: { en: "495×760×65 mm", zh: "495×760×65mm" } },
     ],
@@ -1003,6 +1017,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Doosan DH55-7 (new type)", zh: "斗山DH55-7 新款" } },
       { labelKey: "dimensions", value: { en: "495×760×60 mm", zh: "495×760×60mm" } },
     ],
@@ -1031,6 +1046,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Doosan DH60-7 (old type)", zh: "斗山DH60-7 老款" } },
       { labelKey: "dimensions", value: { en: "495×765×70 mm", zh: "495×765×70mm" } },
     ],
@@ -1059,6 +1075,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Doosan DH60-7 (new type)", zh: "斗山DH60-7 新款" } },
       { labelKey: "dimensions", value: { en: "500×760×70 mm", zh: "500×760×70mm" } },
     ],
@@ -1087,6 +1104,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Doosan DH80-7 (old type)", zh: "斗山DH80-7 老款" } },
       { labelKey: "dimensions", value: { en: "510×770×90 mm", zh: "510×770×90mm" } },
     ],
@@ -1115,6 +1133,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Doosan DH80-7 (new type)", zh: "斗山DH80-7 新款" } },
       { labelKey: "dimensions", value: { en: "490×770×65 mm", zh: "490×770×65mm" } },
     ],
@@ -1143,6 +1162,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Doosan DH130-7", zh: "斗山DH130-7" } },
       { labelKey: "dimensions", value: { en: "770×910×140 mm", zh: "770×910×140mm" } },
     ],
@@ -1171,6 +1191,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Doosan DH150-7", zh: "斗山DH150-7" } },
       { labelKey: "dimensions", value: { en: "720×885×105 mm", zh: "720×885×105mm" } },
     ],
@@ -1199,6 +1220,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Kobelco SK60-3", zh: "神钢SK60-3" } },
       { labelKey: "dimensions", value: { en: "490×650×80 mm", zh: "490×650×80mm" } },
     ],
@@ -1227,6 +1249,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Kobelco SK120-5", zh: "神钢SK120-5" } },
       { labelKey: "dimensions", value: { en: "580×850×100 mm", zh: "580×850×100mm" } },
     ],
@@ -1255,6 +1278,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Kobelco SK140-8", zh: "神钢SK140-8" } },
       { labelKey: "dimensions", value: { en: "295×970×120 mm", zh: "295×970×120mm" } },
     ],
@@ -1283,6 +1307,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Kobelco SK200-3", zh: "神钢SK200-3" } },
       { labelKey: "dimensions", value: { en: "760×880×100 mm", zh: "760×880×100mm" } },
     ],
@@ -1311,6 +1336,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Kobelco SK200-5", zh: "神钢SK200-5" } },
       { labelKey: "dimensions", value: { en: "760×980×100 mm", zh: "760×980×100mm" } },
     ],
@@ -1339,6 +1365,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Kobelco SK200-6", zh: "神钢SK200-6" } },
       { labelKey: "dimensions", value: { en: "760×980×100 mm", zh: "760×980×100mm" } },
     ],
@@ -1367,6 +1394,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Kobelco SK200-6E / 230E", zh: "神钢SK200-6E / 230E" } },
       { labelKey: "dimensions", value: { en: "760×980×100 mm", zh: "760×980×100mm" } },
     ],
@@ -1395,6 +1423,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Kobelco SK200-8 (320×985×120)", zh: "神钢SK200-8（320×985×120）" } },
       { labelKey: "dimensions", value: { en: "320×985×120 mm", zh: "320×985×120mm" } },
     ],
@@ -1423,6 +1452,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Kobelco SK200-8 (370×1210×140)", zh: "神钢SK200-8（370×1210×140）" } },
       { labelKey: "dimensions", value: { en: "370×1210×140 mm", zh: "370×1210×140mm" } },
     ],
@@ -1451,6 +1481,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Kobelco SK220-3", zh: "神钢SK220-3" } },
       { labelKey: "dimensions", value: { en: "720×955×100 mm", zh: "720×955×100mm" } },
     ],
@@ -1479,6 +1510,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Kobelco SK250-3", zh: "神钢SK250-3" } },
       { labelKey: "dimensions", value: { en: "720×990×90 mm", zh: "720×990×90mm" } },
     ],
@@ -1507,6 +1539,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Kobelco SK300-3", zh: "神钢SK300-3" } },
       { labelKey: "dimensions", value: { en: "920×1110×110 mm", zh: "920×1110×110mm" } },
     ],
@@ -1535,6 +1568,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Kobelco SK330-6", zh: "神钢SK330-6" } },
       { labelKey: "dimensions", value: { en: "920×1200×155 mm", zh: "920×1200×155mm" } },
     ],
@@ -1563,6 +1597,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Kobelco SK350-6E", zh: "神钢SK350-6E" } },
       { labelKey: "dimensions", value: { en: "940×1200×120 mm", zh: "940×1200×120mm" } },
     ],
@@ -1591,6 +1626,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Kobelco SK350-8", zh: "神钢SK350-8" } },
       { labelKey: "dimensions", value: { en: "370×1210×140 mm", zh: "370×1210×140mm" } },
     ],
@@ -1619,6 +1655,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Liugong 225", zh: "柳工225" } },
       { labelKey: "dimensions", value: { en: "840×965×195 mm", zh: "840×965×195mm" } },
     ],
@@ -1647,6 +1684,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Liugong 225C", zh: "柳工225C" } },
       { labelKey: "dimensions", value: { en: "760×920×120 mm", zh: "760×920×120mm" } },
     ],
@@ -1675,6 +1713,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Liugong 906C", zh: "柳工906C" } },
       { labelKey: "dimensions", value: { en: "620×810×85 mm", zh: "620×810×85mm" } },
     ],
@@ -1703,6 +1742,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Liugong 908C", zh: "柳工908C" } },
       { labelKey: "dimensions", value: { en: "720×740×100 mm", zh: "720×740×100mm" } },
     ],
@@ -1731,6 +1771,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium-plastic tank, aluminium core", zh: "铝塑水室，芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Kobelco SK200-6E", zh: "神钢SK200-6E" } },
       { labelKey: "dimensions", value: { en: "760×980×100 mm", zh: "760×980×100mm" } },
     ],
@@ -1759,6 +1800,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium-plastic tank, aluminium core", zh: "铝塑水室，芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Kobelco SK200SR", zh: "神钢SK200SR" } },
       { labelKey: "dimensions", value: { en: "760×980×100 mm", zh: "760×980×100mm" } },
     ],
@@ -1791,6 +1833,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Cast aluminium tank, aluminium core", zh: "铸铝水室，芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Kobelco SK200-6E / 230", zh: "神钢SK200-6E / 230" } },
       { labelKey: "dimensions", value: { en: "760×980×100 mm", zh: "760×980×100mm" } },
     ],
@@ -1819,6 +1862,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Yuchai 20-1", zh: "玉柴20-1" } },
       { labelKey: "dimensions", value: { en: "370×430×50 mm", zh: "370×430×50mm" } },
     ],
@@ -1847,6 +1891,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Yuchai 60-6", zh: "玉柴60-6" } },
       { labelKey: "dimensions", value: { en: "500×620×80 mm", zh: "500×620×80mm" } },
     ],
@@ -1875,6 +1920,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Yuchai 60-7 (domestic)", zh: "玉柴60-7国产" } },
       { labelKey: "dimensions", value: { en: "500×570×85 mm", zh: "500×570×85mm" } },
     ],
@@ -1903,6 +1949,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Yuchai 70-8", zh: "玉柴70-8" } },
       { labelKey: "dimensions", value: { en: "545×570×70 mm", zh: "545×570×70mm" } },
     ],
@@ -1931,6 +1978,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Yuchai 85", zh: "玉柴85" } },
       { labelKey: "dimensions", value: { en: "630×790×165 mm", zh: "630×790×165mm" } },
     ],
@@ -1960,6 +2008,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Yuchai 85-7 / 85-6 / 80-6", zh: "玉柴85-7 / 85-6 / 80-6" } },
       { labelKey: "dimensions", value: { en: "680×660×70 mm", zh: "680×660×70mm" } },
     ],
@@ -1988,6 +2037,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant", zh: "防漏抗震型" } },
+      { labelKey: "material", value: { en: "Aluminium core", zh: "芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Yuchai 230-8", zh: "玉柴230-8" } },
       { labelKey: "dimensions", value: { en: "680×1030×80 mm", zh: "680×1030×80mm" } },
     ],
@@ -2016,6 +2066,7 @@ const productSeed: Product[] = [
     ],
     technicalSpecs: [
       { labelKey: "application", value: { en: "Leak-proof, vibration-resistant, aluminium-plastic tank", zh: "防漏抗震型，铝塑水室" } },
+      { labelKey: "material", value: { en: "Aluminium-plastic tank, aluminium core", zh: "铝塑水室，芯体铝" } },
       { labelKey: "compatibleMachines", value: { en: "Kobelco SK200-6", zh: "神钢SK200-6" } },
       { labelKey: "dimensions", value: { en: "760×980×100 mm", zh: "760×980×100mm" } },
     ],
