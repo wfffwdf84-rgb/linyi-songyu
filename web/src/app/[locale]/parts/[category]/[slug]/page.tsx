@@ -63,6 +63,7 @@ export default async function ProductPage({ params }: PageProps) {
     categorySlug === "cooling-parts"
       ? "/images/factory/cmm-radiator.webp"
       : "/images/factory/cmm-inspection.webp";
+  const oemNumbers = product.oemNumbers ?? (product.oemPart ? [product.oemPart] : []);
 
   return (
     <SiteShell showFloatingActions={false} hideBottomNav>
@@ -82,6 +83,15 @@ export default async function ProductPage({ params }: PageProps) {
               : "https://schema.org/OutOfStock",
             url: productUrl,
           },
+          ...(oemNumbers.length > 0
+            ? {
+                additionalProperty: oemNumbers.map((number) => ({
+                  "@type": "PropertyValue",
+                  name: "OEM reference",
+                  value: number,
+                })),
+              }
+            : {}),
         }}
       />
 
@@ -131,10 +141,20 @@ export default async function ProductPage({ params }: PageProps) {
               <h1 className="mb-2 text-headline-lg-mobile text-on-surface md:text-headline-lg">
                 {name}
               </h1>
-              {product.oemPart && (
-                <p className="inline-block rounded border border-outline-variant bg-surface-container-low px-3 py-1 text-technical-data text-on-surface-variant">
-                  {t("oemPart")}: {product.oemPart}
-                </p>
+              {oemNumbers.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-technical-data text-on-surface-variant">
+                    {t("oemPart")}:
+                  </span>
+                  {oemNumbers.map((number) => (
+                    <span
+                      key={number}
+                      className="rounded border border-outline-variant bg-surface-container-low px-2 py-0.5 text-technical-data text-on-surface-variant"
+                    >
+                      {number}
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
 

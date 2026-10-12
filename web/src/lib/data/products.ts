@@ -1,3 +1,5 @@
+import crossReference from "./oem-cross-reference.json";
+
 export type ProductSpec = {
   labelKey: string;
   value: { en: string; zh: string };
@@ -10,6 +12,8 @@ export type Product = {
   categorySlug: string;
   oemRef?: string;
   oemPart?: string;
+  /** OEM part numbers this aftermarket part replaces, from oem-cross-reference.json. */
+  oemNumbers?: string[];
   brands: string[];
   description: { en: string; zh: string };
   image: string;
@@ -2493,9 +2497,28 @@ const driveDiffCatalog: Product[] = (
   ] as const
 ).map(driveDiffPart);
 
-export const products: Product[] = [...productSeed, ...driveDiffCatalog].filter(
-  (product) => product.categorySlug !== "lubrication-parts",
-);
+/**
+ * OEM part numbers the aftermarket part replaces, keyed by product slug. They
+ * live in oem-cross-reference.json so the catalogue list stays untouched, and
+ * scripts/import-oem-cross-reference.mjs fills that file from a CSV.
+ */
+const oemCrossReference = crossReference as Record<string, string[]>;
+
+function withOemCrossReference(product: Product): Product {
+  const numbers = (oemCrossReference[product.slug] ?? [])
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (numbers.length === 0) return product;
+  return {
+    ...product,
+    oemNumbers: numbers,
+    oemPart: product.oemPart ?? numbers.join(" / "),
+  };
+}
+
+export const products: Product[] = [...productSeed, ...driveDiffCatalog]
+  .filter((product) => product.categorySlug !== "lubrication-parts")
+  .map(withOemCrossReference);
 
 const chineseMachineBrands = new Set([
   "sdlg",
@@ -2619,6 +2642,7 @@ function productSearchBlob(product: Product) {
     product.description.zh,
     product.oemRef,
     product.oemPart,
+    ...(product.oemNumbers ?? []),
     product.brands.join(" "),
     product.compatibleMachines,
     ...product.specs.map((spec) => `${spec.value.en} ${spec.value.zh}`),
