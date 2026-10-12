@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { routing } from "@/i18n/routing";
 import { localeFromCountry, readCountryCode } from "@/lib/geo-locale";
 import {
+  collapseDuplicateLocalePrefix,
   isAppLocale,
   pathLocalePrefix,
   withLocalePrefix,
@@ -21,6 +22,16 @@ const cookieOptions = {
 
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // A stale client pathname can double the locale prefix (`/zh/zh`). Collapse it
+  // before anything else so the URL resolves instead of 404ing.
+  const collapsed = collapseDuplicateLocalePrefix(pathname);
+  if (collapsed !== pathname) {
+    const url = request.nextUrl.clone();
+    url.pathname = collapsed;
+    return NextResponse.redirect(url, 308);
+  }
+
   const urlLocale = pathLocalePrefix(pathname);
   const cookieLocale = request.cookies.get(LOCALE_COOKIE)?.value;
   const preferred = isAppLocale(cookieLocale) ? cookieLocale : undefined;

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocale } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
-import { appLocales, localeNames, type AppLocale } from "@/lib/locales";
+import { appLocales, localeNames, stripLocalePrefix, type AppLocale } from "@/lib/locales";
 import { cn } from "@/lib/utils";
 
 type LanguageSwitcherProps = {
@@ -31,7 +31,9 @@ export function LanguageSwitcher({ compact, tone = "light" }: LanguageSwitcherPr
   function switchLocale(next: AppLocale) {
     setOpen(false);
     if (next === locale) return;
-    router.replace(pathname, { locale: next });
+    // `usePathname` should already be locale-agnostic, but strip a prefix if one
+    // is present so the router can never produce a doubled one (`/zh/zh`).
+    router.replace(stripLocalePrefix(pathname), { locale: next });
   }
 
   return (

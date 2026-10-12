@@ -87,6 +87,23 @@ export function withLocalePrefix(pathname: string, locale: AppLocale) {
   return stripped === "/" ? `/${locale}` : `/${locale}${stripped}`;
 }
 
+/**
+ * Collapses a doubled locale prefix such as `/zh/zh` or `/zh/zh/parts` down to
+ * `/zh` or `/zh/parts`.
+ *
+ * A stale client-side pathname that already carries the prefix can produce
+ * these URLs - for example when the locale in the URL and the locale the client
+ * thinks it is on disagree, so the prefix is added a second time. They match no
+ * route and would otherwise render a 404.
+ */
+export function collapseDuplicateLocalePrefix(pathname: string) {
+  const segments = pathname.split("/");
+  const first = segments[1];
+  if (!first || first !== segments[2]) return pathname;
+  if (!isAppLocale(first)) return pathname;
+  return `/${segments.slice(2).join("/")}`;
+}
+
 export function languageAlternateHrefs(path = "/") {
   const map: Record<string, string> = { "x-default": localePath(defaultLocale, path) };
   for (const locale of appLocales) {
