@@ -113,10 +113,12 @@ export default async function InquiryDeskPage({ params }: Props) {
                   </div>
 
                   <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-body-sm sm:grid-cols-2">
-                    <div>
-                      <dt className="text-on-surface-variant">Types</dt>
-                      <dd className="text-on-surface">{inquiry.types.join(", ")}</dd>
-                    </div>
+                    {inquiry.types.length > 0 ? (
+                      <div>
+                        <dt className="text-on-surface-variant">Types</dt>
+                        <dd className="text-on-surface">{inquiry.types.join(", ")}</dd>
+                      </div>
+                    ) : null}
                     {inquiry.brand ? (
                       <div>
                         <dt className="text-on-surface-variant">Brand</dt>

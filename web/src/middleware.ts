@@ -21,6 +21,18 @@ const cookieOptions = {
   secure: process.env.NODE_ENV === "production" || process.env.VERCEL === "1",
 };
 
+/**
+ * Internal tools are not content: they must open at the URL that was typed, not
+ * at whichever locale the edge maps the operator's country to.
+ */
+const INTERNAL_PREFIXES = ["manage-factory-videos", "inquiry-desk"];
+
+function isInternalTool(barePath: string) {
+  return INTERNAL_PREFIXES.some(
+    (prefix) => barePath === `/${prefix}` || barePath.startsWith(`/${prefix}/`),
+  );
+}
+
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -43,7 +55,9 @@ export default function middleware(request: NextRequest) {
   // Strip whatever locale the URL already carries - including a written-out
   // default one such as the `/en` in `/en/parts` - before applying the desired
   // locale, or a second prefix gets bolted on and the URL 404s.
-  const targetPath = withLocalePrefix(stripAnyLocalePrefix(pathname), desired);
+  const bare = stripAnyLocalePrefix(pathname);
+  const target = isInternalTool(bare) ? (urlLocale ?? desired) : desired;
+  const targetPath = withLocalePrefix(bare, target);
   if (targetPath !== pathname) {
     const url = request.nextUrl.clone();
     url.pathname = targetPath;
