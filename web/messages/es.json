@@ -277,6 +277,7 @@
     "land3Spec": "Tránsito confirmado en el RFQ"
   },
   "quote": {
+    "reference": "Referencia",
     "title": "Solicitud de cotización",
     "description": "RFQ con fotos o VIN. Despacho en 24-48 h desde Linyi.",
     "h1": "Enviar cotización rápida",

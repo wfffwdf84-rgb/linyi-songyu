@@ -277,6 +277,7 @@
     "land3Spec": "Transit dikonfirmasi di RFQ"
   },
   "quote": {
+    "reference": "Referensi",
     "title": "Permintaan penawaran",
     "description": "RFQ dengan foto atau VIN. Kirim 24-48 jam dari Linyi.",
     "h1": "Kirim RFQ cepat",

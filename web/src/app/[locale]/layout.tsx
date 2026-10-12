@@ -14,6 +14,7 @@ import {
 } from "@/lib/locales";
 import { QuoteListProvider } from "@/components/quote/QuoteListProvider";
 import { ScrollMemory } from "@/components/layout/ScrollMemory";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 
 const inter = Inter({
   subsets: ["latin", "latin-ext", "cyrillic"],
@@ -99,6 +100,7 @@ export default async function LocaleLayout({ children, params }: Props) {
         />
       </head>
       <body className="min-h-full bg-background text-on-background antialiased">
+        <GoogleAnalytics locale={locale} />
         <NextIntlClientProvider messages={messages}>
           <QuoteListProvider>
             <ScrollMemory />

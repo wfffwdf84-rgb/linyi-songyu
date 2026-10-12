@@ -277,6 +277,7 @@
     "land3Spec": "所要時間はRFQで確定"
   },
   "quote": {
+    "reference": "受付番号",
     "title": "見積依頼",
     "description": "写真またはVIN付きRFQ。臨沂から24〜48時間出荷。",
     "h1": "迅速見積の送信",

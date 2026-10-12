@@ -277,6 +277,7 @@
     "land3Spec": "Transit confirmé au devis"
   },
   "quote": {
+    "reference": "Référence",
     "title": "Demande de devis",
     "description": "RFQ avec photos ou VIN. Expédition 24-48 h depuis Linyi.",
     "h1": "Envoyer un devis rapide",

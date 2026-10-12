@@ -277,6 +277,7 @@
     "land3Spec": "Transit confirmed on RFQ"
   },
   "quote": {
+    "reference": "Reference",
     "title": "Inquiry & RFQ Management",
     "description": "Upload a part photo or VIN to inquire. Dispatch from Linyi within 24-48 hours.",
     "h1": "Send an inquiry",

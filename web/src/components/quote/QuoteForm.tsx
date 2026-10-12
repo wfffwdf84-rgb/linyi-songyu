@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
 import { FacebookIcon, WhatsAppIcon } from "@/components/ui/BrandIcons";
 import { inquirySmsHref, inquiryWhatsAppHref, openInquirySms, siteConfig } from "@/lib/site";
+import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import { type InquiryTypeId, inquiryTypeIds, normalizeInquiryType } from "@/lib/inquiry";
 import { useQuoteList } from "@/components/quote/QuoteListProvider";
@@ -29,6 +30,8 @@ export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
   const [urgent, setUrgent] = useState(false);
   const [photoName, setPhotoName] = useState("");
   const [sent, setSent] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [reference, setReference] = useState("");
   const [selected, setSelected] = useState<InquiryTypeId[]>(initialTypes);
   const [typeError, setTypeError] = useState(false);
   const [smsHint, setSmsHint] = useState(false);
@@ -95,10 +98,57 @@ export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
       .join("\n");
   }
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  function buildPayload(form: HTMLFormElement) {
+    const fd = new FormData(form);
+    return {
+      locale,
+      page: window.location.pathname,
+      types: selected,
+      urgent,
+      company: String(fd.get("company") ?? ""),
+      contact: String(fd.get("contact") ?? ""),
+      vin: String(fd.get("vin") ?? ""),
+      brand: String(fd.get("brand") ?? ""),
+      notes: String(fd.get("notes") ?? ""),
+      photoName,
+      items: items.map((item) => ({ partNumber: item.partNumber, qty: item.qty })),
+    };
+  }
+
+  /**
+   * Record the inquiry on the server before WhatsApp opens. The WhatsApp
+   * hand-off stays the primary path, but a blocked popup or a buyer without
+   * WhatsApp no longer loses the lead. Returns the reference or "".
+   */
+  async function saveInquiry(form: HTMLFormElement) {
+    try {
+      const response = await fetch("/api/inquiry", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(buildPayload(form)),
+      });
+      if (!response.ok) return "";
+      const data = (await response.json()) as { ok?: boolean; reference?: string };
+      return data.ok ? (data.reference ?? "") : "";
+    } catch {
+      return "";
+    }
+  }
+
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const body = buildBody(e.currentTarget);
+    const form = e.currentTarget;
+    const body = buildBody(form);
     if (!body) return;
+    setSaving(true);
+    const saved = await saveInquiry(form);
+    setSaving(false);
+    setReference(saved);
+    track("generate_lead", {
+      inquiry_types: selected.join(","),
+      urgent,
+      parts: items.length,
+    });
     window.open(inquiryWhatsAppHref(body), "_blank", "noopener,noreferrer");
     setSent(true);
   }
@@ -139,6 +189,11 @@ export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
             {t("sentTitle")}
           </h3>
           <p className="mb-4 text-body-sm text-on-surface-variant">{t("sentDesc")}</p>
+          {reference ? (
+            <p className="mb-4 text-technical-data text-on-surface">
+              {t("reference")}: <span className="font-bold">{reference}</span>
+            </p>
+          ) : null}
           <div className="flex flex-col gap-3">
             <a
               href={siteConfig.whatsapp}
@@ -359,7 +414,8 @@ export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
 
       <button
         type="submit"
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] py-4 text-headline-md text-white shadow-md hover:brightness-110"
+        disabled={saving}
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] py-4 text-headline-md text-white shadow-md hover:brightness-110 disabled:opacity-60"
       >
         <WhatsAppIcon className="h-6 w-6" />
         {t("submit")}

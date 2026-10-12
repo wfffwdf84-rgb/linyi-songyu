@@ -277,6 +277,7 @@
     "land3Spec": "RFQ에서 운송 시간 확인"
   },
   "quote": {
+    "reference": "접수 번호",
     "title": "견적 요청",
     "description": "사진 또는 VIN으로 RFQ. 린이에서 24-48시간 출고.",
     "h1": "빠른 견적 제출",

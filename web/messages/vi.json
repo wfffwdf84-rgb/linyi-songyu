@@ -277,6 +277,7 @@
     "land3Spec": "Hành trình xác nhận trên RFQ"
   },
   "quote": {
+    "reference": "Mã tham chiếu",
     "title": "Yêu cầu báo giá",
     "description": "RFQ kèm ảnh hoặc VIN. Giao 24-48 giờ từ Linyi.",
     "h1": "Gửi RFQ nhanh",
