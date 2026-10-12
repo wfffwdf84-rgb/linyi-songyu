@@ -277,6 +277,13 @@
     "land3Spec": "RFQ에서 운송 시간 확인"
   },
   "quote": {
+    "msgTitle": "메시지 남기기",
+    "msgLead": "필요한 부품과 연락 방법을 알려주세요.",
+    "msgLabel": "메시지",
+    "msgPlaceholder": "기종, 부품 번호, 수량…",
+    "msgSubmit": "메시지 보내기",
+    "msgSent": "메시지를 받았습니다. 최대한 빨리 연락드리겠습니다.",
+    "msgFailed": "전송하지 못했습니다. WhatsApp으로 연락해 주세요.",
     "reference": "접수 번호",
     "title": "견적 요청",
     "description": "사진 또는 VIN으로 RFQ. 린이에서 24-48시간 출고.",

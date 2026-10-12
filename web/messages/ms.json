@@ -277,6 +277,13 @@
     "land3Spec": "Transit disahkan pada RFQ"
   },
   "quote": {
+    "msgTitle": "Tinggalkan mesej",
+    "msgLead": "Beritahu kami alat ganti yang anda perlukan dan cara menghubungi anda.",
+    "msgLabel": "Mesej",
+    "msgPlaceholder": "Model mesin, nombor alat ganti, kuantiti…",
+    "msgSubmit": "Hantar mesej",
+    "msgSent": "Mesej diterima. Kami akan menghubungi anda secepat mungkin.",
+    "msgFailed": "Gagal menghantar. Sila hubungi kami melalui WhatsApp.",
     "reference": "Rujukan",
     "title": "Permintaan sebut harga",
     "description": "RFQ dengan foto atau VIN. Hantar 24-48 jam dari Linyi.",

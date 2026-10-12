@@ -277,6 +277,13 @@
     "land3Spec": "所要時間はRFQで確定"
   },
   "quote": {
+    "msgTitle": "メッセージを残す",
+    "msgLead": "必要な部品とご連絡先をお知らせください。",
+    "msgLabel": "メッセージ",
+    "msgPlaceholder": "機種、部品番号、数量…",
+    "msgSubmit": "メッセージを送信",
+    "msgSent": "メッセージを受け付けました。できるだけ早くご連絡します。",
+    "msgFailed": "送信できませんでした。WhatsApp でご連絡ください。",
     "reference": "受付番号",
     "title": "見積依頼",
     "description": "写真またはVIN付きRFQ。臨沂から24〜48時間出荷。",

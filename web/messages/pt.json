@@ -277,6 +277,13 @@
     "land3Spec": "Trânsito confirmado no RFQ"
   },
   "quote": {
+    "msgTitle": "Deixe uma mensagem",
+    "msgLead": "Diga-nos qual peça precisa e como falar consigo.",
+    "msgLabel": "Mensagem",
+    "msgPlaceholder": "Modelo da máquina, referência, quantidade…",
+    "msgSubmit": "Enviar mensagem",
+    "msgSent": "Mensagem recebida. Entraremos em contacto o mais breve possível.",
+    "msgFailed": "Não foi possível enviar. Contacte-nos pelo WhatsApp.",
     "reference": "Referência",
     "title": "Pedido de cotação",
     "description": "RFQ com fotos ou VIN. Expedição em 24-48 h a partir de Linyi.",

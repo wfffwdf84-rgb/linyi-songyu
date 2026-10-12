@@ -277,6 +277,13 @@
     "land3Spec": "Transit confirmed on RFQ"
   },
   "quote": {
+    "msgTitle": "Leave a message",
+    "msgLead": "Tell us which part you need and how to reach you.",
+    "msgLabel": "Message",
+    "msgPlaceholder": "Machine model, part number, quantity…",
+    "msgSubmit": "Send message",
+    "msgSent": "Message received. We will get back to you as soon as we can.",
+    "msgFailed": "Could not send. Please reach us on WhatsApp instead.",
     "reference": "Reference",
     "title": "Inquiry & RFQ Management",
     "description": "Upload a part photo or VIN to inquire. Dispatch from Linyi within 24-48 hours.",

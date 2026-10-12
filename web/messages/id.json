@@ -277,6 +277,13 @@
     "land3Spec": "Transit dikonfirmasi di RFQ"
   },
   "quote": {
+    "msgTitle": "Tinggalkan pesan",
+    "msgLead": "Beri tahu kami suku cadang yang Anda butuhkan dan cara menghubungi Anda.",
+    "msgLabel": "Pesan",
+    "msgPlaceholder": "Model mesin, nomor part, jumlah…",
+    "msgSubmit": "Kirim pesan",
+    "msgSent": "Pesan diterima. Kami akan menghubungi Anda secepatnya.",
+    "msgFailed": "Gagal mengirim. Silakan hubungi kami lewat WhatsApp.",
     "reference": "Referensi",
     "title": "Permintaan penawaran",
     "description": "RFQ dengan foto atau VIN. Kirim 24-48 jam dari Linyi.",

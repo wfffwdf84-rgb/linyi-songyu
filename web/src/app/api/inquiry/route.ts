@@ -27,10 +27,13 @@ export async function POST(request: Request) {
   if (text(body.website)) return NextResponse.json({ ok: true, reference: "" });
 
   const contact = text(body.contact);
+  const message = text(body.message, 2000);
   const types = Array.isArray(body.types)
     ? body.types.map((value) => text(value, 40)).filter(Boolean).slice(0, 8)
     : [];
-  if (!contact || types.length === 0) {
+  // The contact form sends inquiry types; the message box sends a message.
+  // Either one is enough, but contact details are always required.
+  if (!contact || (types.length === 0 && !message)) {
     return NextResponse.json({ ok: false, error: "invalid" }, { status: 400 });
   }
 
@@ -62,6 +65,7 @@ export async function POST(request: Request) {
       contact,
       vin: text(body.vin, 60),
       brand: text(body.brand, 60),
+      message,
       notes: text(body.notes, 2000),
       photoName: text(body.photoName, 200),
       items,

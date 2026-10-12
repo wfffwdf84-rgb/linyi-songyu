@@ -277,6 +277,13 @@
     "land3Spec": "Transit confirmé au devis"
   },
   "quote": {
+    "msgTitle": "Laisser un message",
+    "msgLead": "Dites-nous la pièce dont vous avez besoin et comment vous joindre.",
+    "msgLabel": "Message",
+    "msgPlaceholder": "Modèle de machine, référence, quantité…",
+    "msgSubmit": "Envoyer le message",
+    "msgSent": "Message reçu. Nous vous répondrons dès que possible.",
+    "msgFailed": "Échec de l'envoi. Contactez-nous plutôt sur WhatsApp.",
     "reference": "Référence",
     "title": "Demande de devis",
     "description": "RFQ avec photos ou VIN. Expédition 24-48 h depuis Linyi.",

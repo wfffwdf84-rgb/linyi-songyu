@@ -277,6 +277,13 @@
     "land3Spec": "Hành trình xác nhận trên RFQ"
   },
   "quote": {
+    "msgTitle": "Để lại tin nhắn",
+    "msgLead": "Cho chúng tôi biết bạn cần phụ tùng nào và cách liên hệ với bạn.",
+    "msgLabel": "Tin nhắn",
+    "msgPlaceholder": "Model máy, mã phụ tùng, số lượng…",
+    "msgSubmit": "Gửi tin nhắn",
+    "msgSent": "Đã nhận tin nhắn. Chúng tôi sẽ liên hệ lại sớm nhất có thể.",
+    "msgFailed": "Không gửi được. Vui lòng liên hệ qua WhatsApp.",
     "reference": "Mã tham chiếu",
     "title": "Yêu cầu báo giá",
     "description": "RFQ kèm ảnh hoặc VIN. Giao 24-48 giờ từ Linyi.",

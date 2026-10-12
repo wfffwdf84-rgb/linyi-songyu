@@ -277,6 +277,13 @@
     "land3Spec": "询盘确认时效"
   },
   "quote": {
+    "msgTitle": "在线留言",
+    "msgLead": "告诉我们你需要什么配件，以及怎么联系你。",
+    "msgLabel": "留言内容",
+    "msgPlaceholder": "机型、零件号、数量…",
+    "msgSubmit": "发送留言",
+    "msgSent": "留言已收到，我们会尽快回复你。",
+    "msgFailed": "发送失败，请改用 WhatsApp 联系我们。",
     "reference": "参考号",
     "title": "询盘与报价管理",
     "description": "上传零件照片或 VIN 快速询盘。临沂仓 24-48 小时发货。",

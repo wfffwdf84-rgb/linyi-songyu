@@ -143,6 +143,12 @@ export default async function InquiryDeskPage({ params }: Props) {
                         </dd>
                       </div>
                     ) : null}
+                    {inquiry.message ? (
+                      <div className="sm:col-span-2">
+                        <dt className="text-on-surface-variant">Message</dt>
+                        <dd className="whitespace-pre-wrap text-on-surface">{inquiry.message}</dd>
+                      </div>
+                    ) : null}
                     {inquiry.notes ? (
                       <div className="sm:col-span-2">
                         <dt className="text-on-surface-variant">Notes</dt>

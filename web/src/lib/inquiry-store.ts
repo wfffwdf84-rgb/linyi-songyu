@@ -19,6 +19,7 @@ export type StoredInquiry = {
   contact: string;
   vin: string;
   brand: string;
+  message: string;
   notes: string;
   photoName: string;
   items: InquiryItem[];
