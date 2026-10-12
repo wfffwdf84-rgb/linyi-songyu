@@ -6,6 +6,7 @@ import {
   collapseDuplicateLocalePrefix,
   isAppLocale,
   pathLocalePrefix,
+  stripAnyLocalePrefix,
   withLocalePrefix,
   type AppLocale,
 } from "@/lib/locales";
@@ -39,7 +40,10 @@ export default function middleware(request: NextRequest) {
   const desired: AppLocale =
     preferred ?? urlLocale ?? localeFromCountry(readCountryCode(request.headers));
 
-  const targetPath = withLocalePrefix(pathname, desired);
+  // Strip whatever locale the URL already carries - including a written-out
+  // default one such as the `/en` in `/en/parts` - before applying the desired
+  // locale, or a second prefix gets bolted on and the URL 404s.
+  const targetPath = withLocalePrefix(stripAnyLocalePrefix(pathname), desired);
   if (targetPath !== pathname) {
     const url = request.nextUrl.clone();
     url.pathname = targetPath;

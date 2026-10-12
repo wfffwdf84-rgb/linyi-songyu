@@ -88,6 +88,36 @@ export function withLocalePrefix(pathname: string, locale: AppLocale) {
 }
 
 /**
+ * stripLocalePrefix also removes written-out locale prefixes, including the
+ * default one, and repeats until none is left: `/ms/en/parts` becomes `/parts`.
+ *
+ * pathLocalePrefix deliberately ignores the default locale: it only reports a
+ * prefix that has to appear in the URL. That leaves `/en` looking like an
+ * ordinary path segment, so adding another locale produced `/ms/en`, a URL no
+ * route matches. The loop also repairs those URLs, which the earlier behaviour
+ * handed out and search engines may still hold.
+ *
+ * Safe to repeat because no real route carries two locale segments: the shape
+ * is always `/<locale>/parts/...`.
+ */
+export function stripAnyLocalePrefix(pathname: string) {
+  let rest = pathname;
+  for (;;) {
+    const stripped = stripLocalePrefix(rest);
+    if (stripped !== rest) {
+      rest = stripped;
+      continue;
+    }
+    if (rest === `/${defaultLocale}`) return "/";
+    if (rest.startsWith(`/${defaultLocale}/`)) {
+      rest = rest.slice(defaultLocale.length + 1);
+      continue;
+    }
+    return rest;
+  }
+}
+
+/**
  * Collapses a doubled locale prefix such as `/zh/zh` or `/zh/zh/parts` down to
  * `/zh` or `/zh/parts`.
  *
