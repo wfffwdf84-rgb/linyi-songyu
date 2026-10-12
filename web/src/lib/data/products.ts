@@ -722,7 +722,7 @@ const productSeed: Product[] = [
       zh: "大宇500-7 散热器",
     },
     categorySlug: "cooling-parts",
-    brands: ["Daewoo"],
+    brands: ["Doosan", "Daewoo"],
     description: {
       en: "Leak-proof, vibration-resistant radiator for Daewoo 500-7. 1125×1280 mm, water ports top-left / bottom-right Ø58.",
       zh: "防漏抗震型散热器，适配大宇500-7。尺寸 1125×1280mm，水口上左下右58。",
@@ -932,7 +932,7 @@ const productSeed: Product[] = [
       zh: "斗山DH55-5 散热器",
     },
     categorySlug: "cooling-parts",
-    brands: ["Doosan"],
+    brands: ["Doosan", "Daewoo"],
     description: {
       en: "Leak-proof, vibration-resistant radiator for Doosan DH55-5. 500×765×85 mm, core 3排16波8.",
       zh: "防漏抗震型散热器，适配斗山DH55-5。尺寸 500×765×85mm，规格 3排16波8。",
@@ -960,7 +960,7 @@ const productSeed: Product[] = [
       zh: "斗山DH55-7 散热器",
     },
     categorySlug: "cooling-parts",
-    brands: ["Doosan"],
+    brands: ["Doosan", "Daewoo"],
     description: {
       en: "Leak-proof, vibration-resistant radiator for Doosan DH55-7. 495×760×65 mm, core 2排22波8.",
       zh: "防漏抗震型散热器，适配斗山DH55-7。尺寸 495×760×65mm，规格 2排22波8。",
@@ -988,7 +988,7 @@ const productSeed: Product[] = [
       zh: "斗山DH55-7 散热器（新款）",
     },
     categorySlug: "cooling-parts",
-    brands: ["Doosan"],
+    brands: ["Doosan", "Daewoo"],
     description: {
       en: "Leak-proof, vibration-resistant radiator for Doosan DH55-7, new type. 495×760×60 mm, core 2排22波8.",
       zh: "防漏抗震型散热器，适配斗山DH55-7 新款。尺寸 495×760×60mm，规格 2排22波8。",
@@ -1016,7 +1016,7 @@ const productSeed: Product[] = [
       zh: "斗山DH60-7 散热器（老款）",
     },
     categorySlug: "cooling-parts",
-    brands: ["Doosan"],
+    brands: ["Doosan", "Daewoo"],
     description: {
       en: "Leak-proof, vibration-resistant radiator for Doosan DH60-7, old type. 495×765×70 mm, core 3排16波8.",
       zh: "防漏抗震型散热器，适配斗山DH60-7 老款。尺寸 495×765×70mm，规格 3排16波8。",
@@ -1044,7 +1044,7 @@ const productSeed: Product[] = [
       zh: "斗山DH60-7 散热器（新款）",
     },
     categorySlug: "cooling-parts",
-    brands: ["Doosan"],
+    brands: ["Doosan", "Daewoo"],
     description: {
       en: "Leak-proof, vibration-resistant radiator for Doosan DH60-7, new type. 500×760×70 mm, core 3排16波8.",
       zh: "防漏抗震型散热器，适配斗山DH60-7 新款。尺寸 500×760×70mm，规格 3排16波8。",
@@ -1072,7 +1072,7 @@ const productSeed: Product[] = [
       zh: "斗山DH80-7 散热器（老款）",
     },
     categorySlug: "cooling-parts",
-    brands: ["Doosan"],
+    brands: ["Doosan", "Daewoo"],
     description: {
       en: "Leak-proof, vibration-resistant radiator for Doosan DH80-7, old type. 510×770×90 mm, core 3排16波8.",
       zh: "防漏抗震型散热器，适配斗山DH80-7 老款。尺寸 510×770×90mm，规格 3排16波8。",
@@ -1100,7 +1100,7 @@ const productSeed: Product[] = [
       zh: "斗山DH80-7 散热器（新款）",
     },
     categorySlug: "cooling-parts",
-    brands: ["Doosan"],
+    brands: ["Doosan", "Daewoo"],
     description: {
       en: "Leak-proof, vibration-resistant radiator for Doosan DH80-7, new type. 490×770×65 mm, core 3排16波8.",
       zh: "防漏抗震型散热器，适配斗山DH80-7 新款。尺寸 490×770×65mm，规格 3排16波8。",
@@ -1128,7 +1128,7 @@ const productSeed: Product[] = [
       zh: "斗山DH130-7 散热器",
     },
     categorySlug: "cooling-parts",
-    brands: ["Doosan"],
+    brands: ["Doosan", "Daewoo"],
     description: {
       en: "Leak-proof, vibration-resistant radiator for Doosan DH130-7. 770×910×140 mm, core 4排22波8.",
       zh: "防漏抗震型散热器，适配斗山DH130-7。尺寸 770×910×140mm，规格 4排22波8。",
@@ -1156,7 +1156,7 @@ const productSeed: Product[] = [
       zh: "斗山DH150-7 散热器",
     },
     categorySlug: "cooling-parts",
-    brands: ["Doosan"],
+    brands: ["Doosan", "Daewoo"],
     description: {
       en: "Leak-proof, vibration-resistant radiator for Doosan DH150-7. 720×885×105 mm, core 4排16波8.",
       zh: "防漏抗震型散热器，适配斗山DH150-7。尺寸 720×885×105mm，规格 4排16波8。",
@@ -2507,6 +2507,8 @@ const searchAliases: [string, string][] = [
   ["散热器", "radiator"],
   ["水箱", "radiator"],
   ["大宇", "daewoo"],
+  ["斗山", "doosan"],
+  ["大宇", "doosan"],
 ];
 
 function searchNeedles(query: string) {
