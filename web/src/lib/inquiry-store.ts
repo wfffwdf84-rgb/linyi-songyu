@@ -93,3 +93,35 @@ export async function listInquiries(): Promise<StoredInquiry[]> {
   }
   return records.sort((a, b) => b.receivedAt.localeCompare(a.receivedAt));
 }
+
+/**
+ * Watermark of the newest inquiry the operator has already looked at, kept
+ * outside the inquiries/ prefix so listing leads never trips over it. It holds
+ * only a timestamp, so it is stored unencrypted.
+ */
+const READ_STATE_PATH = "inquiry-state/read.json";
+
+export async function inquiriesReadAt(): Promise<string> {
+  try {
+    const { blobs } = await list({ prefix: READ_STATE_PATH, limit: 1 });
+    const found = blobs.find((blob) => blob.pathname === READ_STATE_PATH);
+    if (!found) return "";
+    const response = await fetch(found.url, { cache: "no-store" });
+    if (!response.ok) return "";
+    const data = (await response.json()) as { lastReadAt?: unknown };
+    return typeof data.lastReadAt === "string" ? data.lastReadAt : "";
+  } catch {
+    return "";
+  }
+}
+
+export async function markInquiriesRead(upTo: string) {
+  await put(READ_STATE_PATH, JSON.stringify({ lastReadAt: upTo }), {
+    access: "public",
+    contentType: "application/json",
+    addRandomSuffix: false,
+    allowOverwrite: true,
+    // Blob caches for a month by default, which would serve a stale watermark.
+    cacheControlMaxAge: 0,
+  });
+}

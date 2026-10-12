@@ -6,7 +6,8 @@ import { InquiryDeskLogin } from "@/components/admin/InquiryDeskLogin";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
 import { InquiryDeskLogout } from "@/components/admin/InquiryDeskLogout";
 import { isInquiryDeskAuthed } from "@/lib/inquiry-auth";
-import { inquiryStorageConfigured, listInquiries } from "@/lib/inquiry-store";
+import { inquiryStorageConfigured, inquiriesReadAt, listInquiries } from "@/lib/inquiry-store";
+import { InquiryDeskMarkRead } from "@/components/admin/InquiryDeskMarkRead";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,9 @@ export default async function InquiryDeskPage({ params }: Props) {
 
   const configured = inquiryStorageConfigured();
   const inquiries = configured ? await listInquiries() : [];
+  const readAt = configured ? await inquiriesReadAt() : "";
+  // listInquiries returns newest first, so anything above the watermark is new.
+  const unread = readAt ? inquiries.filter((inquiry) => inquiry.receivedAt > readAt) : inquiries;
 
   return (
     <SiteShell>
@@ -52,6 +56,11 @@ export default async function InquiryDeskPage({ params }: Props) {
             Inquiry desk
           </h1>
           <div className="flex items-center gap-3 text-technical-data">
+            {unread.length > 0 ? (
+              <span className="rounded bg-error px-3 py-1 font-semibold text-on-error">
+                {unread.length} new
+              </span>
+            ) : null}
             <span className="rounded bg-surface-container px-3 py-1 text-on-surface-variant">
               {inquiries.length} captured
             </span>
@@ -70,6 +79,7 @@ export default async function InquiryDeskPage({ params }: Props) {
           </p>
         ) : (
           <ul className="space-y-4">
+            {unread.length > 0 ? <InquiryDeskMarkRead upTo={unread[0].receivedAt} /> : null}
             {inquiries.map((inquiry) => {
               const wa = whatsappHref(inquiry.contact);
               return (
@@ -78,6 +88,11 @@ export default async function InquiryDeskPage({ params }: Props) {
                   className="rounded-xl border border-outline-variant bg-surface-container-lowest p-5"
                 >
                   <div className="mb-3 flex flex-wrap items-center gap-2">
+                    {unread.some((item) => item.id === inquiry.id) ? (
+                      <span className="rounded bg-error px-2 py-0.5 text-label-caps text-on-error">
+                        NEW
+                      </span>
+                    ) : null}
                     {inquiry.urgent ? (
                       <span className="rounded bg-error px-2 py-0.5 text-label-caps text-on-error">
                         URGENT
