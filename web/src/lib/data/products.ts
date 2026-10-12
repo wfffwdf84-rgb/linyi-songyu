@@ -1778,6 +1778,10 @@ const productSeed: Product[] = [
       zh: "防漏抗震型散热器，适配神钢SK200-6E / 230。尺寸 760×980×100mm，规格 3排18波8。",
     },
     image: "/images/products/rad-sk200-6e-cast.jpg",
+    images: [
+      "/images/products/rad-sk200-6e-cast.jpg",
+      "/images/products/rad-sk200-6e-alt.jpg",
+    ],
     imageFit: "contain",
     inStock: true,
     dispatch24h: true,
@@ -1988,6 +1992,34 @@ const productSeed: Product[] = [
       { labelKey: "dimensions", value: { en: "680×1030×80 mm", zh: "680×1030×80mm" } },
     ],
     compatibleMachines: "Yuchai 230-8",
+  },
+  {
+    slug: "rad-sk200-6-plastic",
+    partNumber: "RAD-SK200-6-PLASTIC",
+    name: {
+      en: "Kobelco SK200-6 Radiator (aluminium-plastic tank)",
+      zh: "神钢SK200-6 散热器（铝塑）",
+    },
+    categorySlug: "cooling-parts",
+    brands: ["Kobelco"],
+    description: {
+      en: "Leak-proof, vibration-resistant radiator for Kobelco SK200-6, aluminium-plastic tank. 760×980×100 mm.",
+      zh: "防漏抗震型散热器，适配神钢SK200-6，铝塑水室。尺寸 760×980×100mm。",
+    },
+    image: "/images/products/rad-sk200-6-plastic.jpg",
+    imageFit: "contain",
+    inStock: true,
+    dispatch24h: true,
+    specs: [
+      { labelKey: "fits", value: { en: "Kobelco SK200-6", zh: "神钢SK200-6" } },
+      { labelKey: "dimensions", value: { en: "760×980×100 mm", zh: "760×980×100mm" } },
+    ],
+    technicalSpecs: [
+      { labelKey: "application", value: { en: "Leak-proof, vibration-resistant, aluminium-plastic tank", zh: "防漏抗震型，铝塑水室" } },
+      { labelKey: "compatibleMachines", value: { en: "Kobelco SK200-6", zh: "神钢SK200-6" } },
+      { labelKey: "dimensions", value: { en: "760×980×100 mm", zh: "760×980×100mm" } },
+    ],
+    compatibleMachines: "Kobelco SK200-6",
   },
 ];
 
