@@ -10,18 +10,18 @@
     "catalog": "Produits",
     "about": "À propos",
     "quality": "Qualité & logistique",
-    "contact": "Contact",
+    "contact": "Contacter",
     "rfq": "Demande",
     "quotes": "Demande",
     "inquiry": "Demande",
-    "menu": "Menu",
+    "menu": "Menus",
     "allProducts": "Tous les produits",
     "uploadVideo": "Vidéo"
   },
   "lang": {
     "en": "English",
     "zh": "中文",
-    "switchToEn": "Switch to English",
+    "switchToEn": "Passer à l'anglais",
     "switchToZh": "切换到简体中文"
   },
   "footer": {
@@ -30,7 +30,7 @@
     "company": "Société",
     "logistics": "Logistique",
     "support": "Services",
-    "contact": "Contact",
+    "contact": "Contacter",
     "oemSearch": "Recherche n° de pièce",
     "qualityControl": "Qualité & logistique",
     "shippingPolicy": "Fret maritime",
@@ -178,7 +178,7 @@
     "weight": "Poids",
     "location": "Lieu",
     "material": "Matière",
-    "application": "Application",
+    "application": "Demande",
     "pressureRatio": "Rapport de pression",
     "transmissionType": "Type de transmission",
     "gears": "Rapports",
@@ -209,7 +209,7 @@
     "powerSupply": "Alimentation",
     "endurance": "Autonomie",
     "moq": "Qté min.",
-    "moqValue": "50 pcs"
+    "moqValue": "50 pièces"
   },
   "quality": {
     "title": "Qualité & logistique",
@@ -442,7 +442,7 @@
     "s1Body": "Contactez les ventes par WhatsApp, téléphone ou e-mail. Les conditions figurent sur le devis.",
     "s2Title": "Coordonnées bancaires",
     "s2Body": "Les coordonnées ne sont envoyées que sur devis formel ou confirmation écrite. Ne payez pas un compte inconnu se prétendant Songyu.",
-    "s3Title": "Contact",
+    "s3Title": "Contacter",
     "s3Body": "Tél. +86 175 6815 5882. E-mail wfffwdf84@gmail.com."
   },
   "privacy": {
@@ -456,7 +456,7 @@
     "s2Body": "Pour correspondre les pièces, répondre et poursuivre l’échange. Un cookie de langue peut être enregistré.",
     "s3Title": "Tiers",
     "s3Body": "WhatsApp, téléphone et e-mail suivent leurs prestataires. Nous ne vendons pas les listes de demandes.",
-    "s4Title": "Contact",
+    "s4Title": "Contacter",
     "s4Body": "Questions confidentialité : wfffwdf84@gmail.com."
   },
   "terms": {

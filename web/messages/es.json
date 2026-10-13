@@ -21,7 +21,7 @@
   "lang": {
     "en": "English",
     "zh": "中文",
-    "switchToEn": "Switch to English",
+    "switchToEn": "Cambiar al inglés",
     "switchToZh": "切换到简体中文"
   },
   "footer": {
@@ -177,7 +177,7 @@
     "fits": "Compatible",
     "weight": "Peso",
     "location": "Ubicación",
-    "material": "Material",
+    "material": "Materiales",
     "application": "Aplicación",
     "pressureRatio": "Relación de presión",
     "transmissionType": "Tipo de transmisión",
