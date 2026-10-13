@@ -1,4 +1,5 @@
 import crossReference from "./oem-cross-reference.json";
+import { productDescription, productName, tr } from "@/lib/translated";
 
 export type ProductSpec = {
   labelKey: string;
@@ -2637,7 +2638,19 @@ function searchNeedles(query: string) {
   return [...needles].filter(Boolean);
 }
 
-function productSearchBlob(product: Product) {
+function productSearchBlob(product: Product, locale: string) {
+  // A buyer typing "Радиатор" or "مشعاع" should find the part, so the index
+  // carries the localised copy as well as English and Chinese.
+  const localised =
+    locale && locale !== "en" && locale !== "zh"
+      ? [
+          productName(locale, product.name),
+          productDescription(locale, product.description, product.name),
+          ...product.specs.map((spec) => tr(locale, spec.value.en, spec.value.zh)),
+          ...product.technicalSpecs.map((spec) => tr(locale, spec.value.en, spec.value.zh)),
+        ]
+      : [];
+
   return [
     product.partNumber,
     product.slug,
@@ -2652,13 +2665,14 @@ function productSearchBlob(product: Product) {
     product.compatibleMachines,
     ...product.specs.map((spec) => `${spec.value.en} ${spec.value.zh}`),
     ...product.technicalSpecs.map((spec) => `${spec.value.en} ${spec.value.zh}`),
+    ...localised,
   ]
     .filter(Boolean)
     .join(" ");
 }
 
-function productMatchesQuery(product: Product, needles: string[]) {
-  const blob = productSearchBlob(product);
+function productMatchesQuery(product: Product, needles: string[], locale: string) {
+  const blob = productSearchBlob(product, locale);
   const compact = normalizeSearch(blob);
   const lower = blob.toLowerCase();
   return needles.some((needle) => compact.includes(needle) || lower.includes(needle));
@@ -2673,13 +2687,13 @@ function matchScore(product: Product, compactQuery: string) {
   return 30;
 }
 
-export function searchProducts(query: string) {
+export function searchProducts(query: string, locale = "en") {
   const raw = query.trim();
   if (!raw) return [];
   const needles = searchNeedles(raw);
   const compact = normalizeSearch(raw);
   return products
-    .filter((product) => productMatchesQuery(product, needles))
+    .filter((product) => productMatchesQuery(product, needles, locale))
     .sort((a, b) => matchScore(b, compact) - matchScore(a, compact));
 }
 
@@ -2690,8 +2704,8 @@ export type ProductSearchHit = {
   image: string;
 };
 
-export function suggestProducts(query: string, limit = 8): ProductSearchHit[] {
-  return searchProducts(query)
+export function suggestProducts(query: string, limit = 8, locale = "en"): ProductSearchHit[] {
+  return searchProducts(query, locale)
     .slice(0, limit)
     .map((product) => ({
       href: `/parts/${product.categorySlug}/${product.slug}`,

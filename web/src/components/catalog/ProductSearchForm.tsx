@@ -5,9 +5,11 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import Image from "next/image";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
-import { loc } from "@/lib/locale";
 import { cn } from "@/lib/utils";
 import type { ProductSearchHit } from "@/lib/data/products";
+
+/** The API localises the name before it reaches the browser. */
+type SearchHit = Omit<ProductSearchHit, "name"> & { name: string };
 
 type ProductSearchFormProps = {
   defaultValue?: string;
@@ -28,7 +30,7 @@ export function ProductSearchForm({
   const listId = useId();
   const rootRef = useRef<HTMLFormElement>(null);
   const [value, setValue] = useState(defaultValue);
-  const [items, setItems] = useState<ProductSearchHit[]>([]);
+  const [items, setItems] = useState<SearchHit[]>([]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
 
@@ -45,8 +47,8 @@ export function ProductSearchForm({
       return;
     }
     const timer = window.setTimeout(async () => {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
-      const data = (await res.json().catch(() => null)) as { items?: ProductSearchHit[] } | null;
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&locale=${encodeURIComponent(locale)}`);
+      const data = (await res.json().catch(() => null)) as { items?: SearchHit[] } | null;
       const next = Array.isArray(data?.items) ? data.items : [];
       setItems(next);
       setOpen(next.length > 0);
@@ -197,7 +199,7 @@ export function ProductSearchForm({
                 <span className="min-w-0">
                   <span className="block truncate text-technical-data text-on-surface">{item.partNumber}</span>
                   <span className="block truncate text-sm text-on-surface-variant">
-                    {loc(locale, item.name.en, item.name.zh)}
+                    {item.name}
                   </span>
                 </span>
               </button>

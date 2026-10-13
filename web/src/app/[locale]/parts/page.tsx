@@ -43,7 +43,7 @@ export default async function PartsIndexPage({ params, searchParams }: Props) {
 
   const t = await getTranslations("catalog");
   const tNav = await getTranslations("nav");
-  const results = searchProducts(q);
+  const results = searchProducts(q, locale);
 
   return (
     <SiteShell>
