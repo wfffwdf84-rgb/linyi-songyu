@@ -8,6 +8,7 @@ import { loc } from "@/lib/locale";
 import { AddToQuoteButton } from "@/components/quote/AddToQuoteButton";
 import { addToQuoteButtonClass } from "@/lib/quote-button";
 import { rememberProduct, saveScroll } from "@/lib/scroll-memory";
+import { productName, productDescription, tr } from "@/lib/translated";
 
 type ProductCardProps = {
   product: Product;
@@ -18,7 +19,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const t = useTranslations("catalog");
   const tp = useTranslations("product");
   const href = `/parts/${product.categorySlug}/${product.slug}`;
-  const name = loc(locale, product.name.en, product.name.zh);
+  const name = productName(locale, product.name);
 
   return (
     <article
@@ -55,7 +56,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 {tp(spec.labelKey)}:
               </span>
               <span className="text-technical-data font-semibold text-on-surface">
-                {loc(locale, spec.value.en, spec.value.zh)}
+                {tr(locale, spec.value.en, spec.value.zh)}
               </span>
             </div>
           ))}

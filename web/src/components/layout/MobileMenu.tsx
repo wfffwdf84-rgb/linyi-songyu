@@ -7,6 +7,7 @@ import { categories } from "@/lib/data/categories";
 import { loc } from "@/lib/locale";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
 import { cn } from "@/lib/utils";
+import { tr } from "@/lib/translated";
 
 export function MobileMenu() {
   const [open, setOpen] = useState(false);
@@ -85,7 +86,7 @@ export function MobileMenu() {
                           : "text-on-surface-variant",
                       )}
                     >
-                      {loc(locale, category.name.en, category.name.zh)}
+                      {tr(locale, category.name.en, category.name.zh)}
                     </Link>
                     {category.brands?.length ? (
                       <button

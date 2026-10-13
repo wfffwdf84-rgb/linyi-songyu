@@ -7,6 +7,7 @@ import { categories } from "@/lib/data/categories";
 import { loc } from "@/lib/locale";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
 import { cn } from "@/lib/utils";
+import { tr } from "@/lib/translated";
 
 export function ProductsMenu() {
   const locale = useLocale();
@@ -50,7 +51,7 @@ export function ProductsMenu() {
                   className="flex min-w-0 flex-1 items-center gap-2 px-4 py-2"
                 >
                   <MaterialIcon name={category.icon} className="text-[18px]" />
-                  <span>{loc(locale, category.name.en, category.name.zh)}</span>
+                  <span>{tr(locale, category.name.en, category.name.zh)}</span>
                 </Link>
                 {category.brands?.length ? (
                   <button

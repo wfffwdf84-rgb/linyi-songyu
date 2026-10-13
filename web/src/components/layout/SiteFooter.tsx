@@ -8,6 +8,7 @@ import { SocialTiles } from "@/components/layout/SocialTiles";
 import { categories } from "@/lib/data/categories";
 import { loc } from "@/lib/locale";
 import { mapsOpenHref } from "@/lib/maps";
+import { tr } from "@/lib/translated";
 
 export function SiteFooter() {
   const t = useTranslations("footer");
@@ -42,7 +43,7 @@ export function SiteFooter() {
             {categories.map((category) => (
               <li key={category.slug}>
                 <Link href={`/parts/${category.slug}`} className={linkClass}>
-                  {loc(locale, category.name.en, category.name.zh)}
+                  {tr(locale, category.name.en, category.name.zh)}
                 </Link>
               </li>
             ))}

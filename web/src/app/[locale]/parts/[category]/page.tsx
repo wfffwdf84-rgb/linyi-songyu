@@ -12,6 +12,7 @@ import { getProductsByCategory } from "@/lib/data/products";
 import { loc } from "@/lib/locale";
 import { routing } from "@/i18n/routing";
 import { pageAlternates } from "@/lib/locales";
+import { tr } from "@/lib/translated";
 
 type PageProps = {
   params: Promise<{ locale: string; category: string }>;
@@ -29,8 +30,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const category = getCategory(slug);
   if (!category) return {};
 
-  const name = loc(locale, category.name.en, category.name.zh);
-  const description = loc(locale, category.description.en, category.description.zh);
+  const name = tr(locale, category.name.en, category.name.zh);
+  const description = tr(locale, category.description.en, category.description.zh);
 
   return {
     title:
@@ -56,7 +57,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
   const brand = findCategoryBrand(category, brandKey);
   const products = getProductsByCategory(slug);
   const tNav = await getTranslations("nav");
-  const categoryName = loc(locale, category.name.en, category.name.zh);
+  const categoryName = tr(locale, category.name.en, category.name.zh);
   const brandName = brand ? loc(locale, brand.en, brand.zh) : undefined;
   const title = brandName ?? categoryName;
 
@@ -107,7 +108,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
             ) : null}
             {brandName ? null : (
               <p className="mb-4 max-w-2xl text-body-sm text-on-surface-variant md:mb-6 md:text-body-lg">
-                {loc(locale, category.description.en, category.description.zh)}
+                {tr(locale, category.description.en, category.description.zh)}
               </p>
             )}
             </div>

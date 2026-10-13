@@ -19,6 +19,7 @@ import { addToQuoteButtonClass } from "@/lib/quote-button";
 import { localePath, pageAlternates } from "@/lib/locales";
 import { socialCard } from "@/lib/social-card";
 import { brandListLabel } from "@/lib/brand-names";
+import { productName, productDescription, tr } from "@/lib/translated";
 
 type PageProps = {
   params: Promise<{ locale: string; category: string; slug: string }>;
@@ -34,11 +35,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { locale, category, slug } = await params;
   const product = getProduct(category, slug);
   if (!product) return {};
-  const name = loc(locale, product.name.en, product.name.zh);
+  const name = productName(locale, product.name);
 
   return {
     title: `${product.partNumber} ${name} | OEM`,
-    description: loc(locale, product.description.en, product.description.zh),
+    description: productDescription(locale, product.description),
     alternates: pageAlternates(locale, `/parts/${category}/${slug}`),
     openGraph: {
       images: [{ url: socialCard(product.image) }],
@@ -55,8 +56,8 @@ export default async function ProductPage({ params }: PageProps) {
 
   const t = await getTranslations("product");
   const tNav = await getTranslations("nav");
-  const name = loc(locale, product.name.en, product.name.zh);
-  const description = loc(locale, product.description.en, product.description.zh);
+  const name = productName(locale, product.name);
+  const description = productDescription(locale, product.description);
   const productUrl = `${siteConfig.url}${localePath(locale, `/parts/${categorySlug}/${slug}`)}`;
   // The CMM photo shows a radiator on radiator pages and a transmission housing
   // everywhere else, so the QC shot matches the part being described.
@@ -104,7 +105,7 @@ export default async function ProductPage({ params }: PageProps) {
             items={[
               { href: "/", label: tNav("home") },
               { href: "/parts/transmission-systems", label: tNav("products") },
-              { href: `/parts/${categorySlug}`, label: loc(locale, category.name.en, category.name.zh) },
+              { href: `/parts/${categorySlug}`, label: tr(locale, category.name.en, category.name.zh) },
               { label: product.partNumber },
             ]}
           />
@@ -215,7 +216,7 @@ export default async function ProductPage({ params }: PageProps) {
                       <td
                         className={`px-4 py-3 text-body-sm text-on-surface ${i % 2 === 0 ? "bg-surface" : "bg-surface-container-low"}`}
                       >
-                        {loc(locale, row.value.en, row.value.zh)}
+                        {tr(locale, row.value.en, row.value.zh)}
                       </td>
                     </tr>
                   ))}
