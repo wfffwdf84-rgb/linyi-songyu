@@ -44,7 +44,24 @@ export function productName(locale: string, name: Localised): string {
   return direct ?? swapCatalogLabel(locale, name.en);
 }
 
-/** Product description in the visitor's language, with an English fallback. */
-export function productDescription(locale: string, description: Localised): string {
+/** The boilerplate sentence every catalogue entry shares. */
+const CATALOG_TAIL = "In stock at Linyi hub.";
+
+/**
+ * Product description in the visitor's language, with an English fallback.
+ * Catalogue entries share one generated sentence, so instead of translating 256
+ * near-identical strings the localised name is followed by the translated tail.
+ */
+export function productDescription(
+  locale: string,
+  description: Localised,
+  name?: Localised,
+): string {
+  const direct = table[locale]?.[description.en];
+  if (direct) return direct;
+  if (locale !== "en" && locale !== "zh" && name) {
+    const tail = table[locale]?.[CATALOG_TAIL];
+    if (tail) return `${productName(locale, name)}. ${tail}`;
+  }
   return tr(locale, description.en, description.zh);
 }

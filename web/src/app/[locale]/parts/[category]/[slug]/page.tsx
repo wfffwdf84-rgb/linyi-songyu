@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return {
     title: `${product.partNumber} ${name} | OEM`,
-    description: productDescription(locale, product.description),
+    description: productDescription(locale, product.description, product.name),
     alternates: pageAlternates(locale, `/parts/${category}/${slug}`),
     openGraph: {
       images: [{ url: socialCard(product.image) }],
@@ -57,7 +57,7 @@ export default async function ProductPage({ params }: PageProps) {
   const t = await getTranslations("product");
   const tNav = await getTranslations("nav");
   const name = productName(locale, product.name);
-  const description = productDescription(locale, product.description);
+  const description = productDescription(locale, product.description, product.name);
   const productUrl = `${siteConfig.url}${localePath(locale, `/parts/${categorySlug}/${slug}`)}`;
   // The CMM photo shows a radiator on radiator pages and a transmission housing
   // everywhere else, so the QC shot matches the part being described.
