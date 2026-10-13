@@ -2615,6 +2615,11 @@ const searchAliases: [string, string][] = [
   ["大宇", "daewoo"],
   ["斗山", "doosan"],
   ["大宇", "doosan"],
+  ["神钢", "kobelco"],
+  ["玉柴", "yuchai"],
+  ["龙工", "lonking"],
+  ["雷沃", "lovol"],
+  ["采埃孚", "zf"],
 ];
 
 function searchNeedles(query: string) {

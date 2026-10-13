@@ -9,6 +9,7 @@ import type { CategoryFilter } from "@/lib/data/categories";
 import { filterProducts, type Product } from "@/lib/data/products";
 import { loc } from "@/lib/locale";
 import { cn } from "@/lib/utils";
+import { brandLabel } from "@/lib/brand-names";
 
 type CatalogFilterBarProps = {
   products: Product[];
@@ -38,7 +39,7 @@ export function CatalogFilterBar({
     return names.map((brand) => ({
       id: `brand:${brand}`,
       en: brand,
-      zh: brand,
+      zh: brandLabel(brand, "zh"),
     }));
   }, [products, hideBrandChips]);
 

@@ -18,6 +18,7 @@ import { ProductBackButton } from "@/components/product/ProductBackButton";
 import { addToQuoteButtonClass } from "@/lib/quote-button";
 import { localePath, pageAlternates } from "@/lib/locales";
 import { socialCard } from "@/lib/social-card";
+import { brandListLabel } from "@/lib/brand-names";
 
 type PageProps = {
   params: Promise<{ locale: string; category: string; slug: string }>;
@@ -129,7 +130,7 @@ export default async function ProductPage({ params }: PageProps) {
             <div className="mb-6">
               <div className="mb-3 flex items-center gap-3">
                 <span className="rounded bg-surface-tint px-2 py-1 text-label-caps text-on-primary">
-                  {product.brands.join(" / ")}
+                  {brandListLabel(product.brands, locale)}
                 </span>
                 {product.inStock && (
                   <span className="flex items-center text-technical-data text-primary">
