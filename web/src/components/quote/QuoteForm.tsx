@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
-import { FacebookIcon, WhatsAppIcon } from "@/components/ui/BrandIcons";
+import { FacebookIcon, WhatsAppIcon, YouTubeIcon } from "@/components/ui/BrandIcons";
 import { inquirySmsHref, inquiryWhatsAppHref, openInquirySms, siteConfig } from "@/lib/site";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
@@ -438,6 +438,15 @@ export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
         >
           <FacebookIcon className="h-5 w-5" />
           Facebook
+        </a>
+        <a
+          href={siteConfig.youtube}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-outline-variant bg-surface-container-lowest py-3 text-technical-data text-on-surface hover:border-primary"
+        >
+          <YouTubeIcon className="h-5 w-5" />
+          YouTube
         </a>
       </div>
       {smsHint && smsDraft ? (

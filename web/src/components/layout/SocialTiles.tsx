@@ -1,4 +1,10 @@
-import { FacebookIcon, InstagramIcon, TikTokIcon, WhatsAppIcon } from "@/components/ui/BrandIcons";
+import {
+  FacebookIcon,
+  InstagramIcon,
+  TikTokIcon,
+  WhatsAppIcon,
+  YouTubeIcon,
+} from "@/components/ui/BrandIcons";
 import { siteConfig } from "@/lib/site";
 
 const tileClass =
@@ -42,6 +48,15 @@ export function SocialTiles() {
       >
         <InstagramIcon className="h-9 w-9" />
         <span className="text-xs font-medium">Instagram</span>
+      </a>
+      <a
+        href={siteConfig.youtube}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={tileClass}
+      >
+        <YouTubeIcon className="h-9 w-9" />
+        <span className="text-xs font-medium">YouTube</span>
       </a>
     </div>
   );

@@ -21,7 +21,7 @@ npx vercel deploy --prod --archive=tgz --yes --scope gcjx
 | --- | --- |
 | `NEXT_PUBLIC_SITE_URL` | Canonical origin used by metadata, JSON-LD and the sitemap |
 | `NEXT_PUBLIC_WHATSAPP` | WhatsApp deep link |
-| `NEXT_PUBLIC_FACEBOOK_URL` / `NEXT_PUBLIC_TIKTOK_URL` / `NEXT_PUBLIC_INSTAGRAM_URL` | Social links |
+| `NEXT_PUBLIC_FACEBOOK_URL` / `NEXT_PUBLIC_TIKTOK_URL` / `NEXT_PUBLIC_INSTAGRAM_URL` / `NEXT_PUBLIC_YOUTUBE_URL` | Social links |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob: factory videos and captured inquiries |
 | `FACTORY_VIDEO_PASSWORD` | Password for the factory uploader **and** the inquiry desk. Also the fallback encryption key for inquiries |
 | `NEXT_PUBLIC_GA_ID` | GA4 measurement ID. While empty the site loads no analytics script and sets no analytics cookie |

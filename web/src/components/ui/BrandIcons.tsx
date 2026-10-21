@@ -47,6 +47,19 @@ export function TikTokIcon({ className }: IconProps) {
   );
 }
 
+export function YouTubeIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={cn("h-8 w-8", className)} aria-hidden>
+      <circle cx="12" cy="12" r="12" fill="#FF0000" />
+      <path
+        fill="#fff"
+        d="M18.2 9.2a1.9 1.9 0 0 0-1.3-1.3c-1.1-.3-4.9-.3-4.9-.3s-3.8 0-4.9.3a1.9 1.9 0 0 0-1.3 1.3c-.2.9-.3 1.9-.3 2.8s.1 1.9.3 2.8a1.9 1.9 0 0 0 1.3 1.3c1.1.3 4.9.3 4.9.3s3.8 0 4.9-.3a1.9 1.9 0 0 0 1.3-1.3c.2-.9.3-1.9.3-2.8s-.1-1.9-.3-2.8z"
+      />
+      <path fill="#FF0000" d="M10.7 14.3V9.7L14.7 12z" />
+    </svg>
+  );
+}
+
 export function InstagramIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={cn("h-8 w-8", className)} aria-hidden>

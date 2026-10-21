@@ -16,6 +16,7 @@ export const siteConfig = {
     "https://www.facebook.com/profile.php?id=61592685976455",
   tiktok: process.env.NEXT_PUBLIC_TIKTOK_URL ?? "https://www.tiktok.com/@loader.parts0",
   instagram: process.env.NEXT_PUBLIC_INSTAGRAM_URL ?? "https://www.instagram.com/rodgwdcj/",
+  youtube: process.env.NEXT_PUBLIC_YOUTUBE_URL ?? "https://www.youtube.com/@wfffwdf",
   locale: "en",
   logo: "/images/brand/logo.png",
   linyi: {
@@ -29,12 +30,17 @@ const PLACEHOLDER_SOCIAL = new Set([
   "https://www.facebook.com",
   "https://www.tiktok.com",
   "https://www.instagram.com",
+  "https://www.youtube.com",
 ]);
 
 export function organizationSameAs() {
-  return [siteConfig.whatsapp, siteConfig.facebook, siteConfig.tiktok, siteConfig.instagram].filter(
-    (url) => !PLACEHOLDER_SOCIAL.has(url.replace(/\/$/, "")),
-  );
+  return [
+    siteConfig.whatsapp,
+    siteConfig.facebook,
+    siteConfig.tiktok,
+    siteConfig.instagram,
+    siteConfig.youtube,
+  ].filter((url) => !PLACEHOLDER_SOCIAL.has(url.replace(/\/$/, "")));
 }
 
 const SMS_BODY_MAX = 450;
