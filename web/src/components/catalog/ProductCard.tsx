@@ -53,7 +53,7 @@ export function ProductCard({ product }: ProductCardProps) {
               className="flex items-center justify-between border-b border-surface-variant py-1 last:border-0"
             >
               <span className="text-sm text-on-surface-variant">
-                {tp(spec.labelKey)}:
+                {tp.has(spec.labelKey) ? tp(spec.labelKey) : spec.labelKey}:
               </span>
               <span className="text-technical-data font-semibold text-on-surface">
                 {tr(locale, spec.value.en, spec.value.zh)}

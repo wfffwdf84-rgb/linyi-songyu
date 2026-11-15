@@ -9,7 +9,8 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
 import { WhatsAppIcon } from "@/components/ui/BrandIcons";
 import { getCategory } from "@/lib/data/categories";
-import { getAllProductPaths, getProduct } from "@/lib/data/products";
+import { getAllProductPaths } from "@/lib/data/products";
+import { getPublicProduct } from "@/lib/catalog";
 import { loc } from "@/lib/locale";
 import { siteConfig } from "@/lib/site";
 import { routing } from "@/i18n/routing";
@@ -33,7 +34,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale, category, slug } = await params;
-  const product = getProduct(category, slug);
+  const product = await getPublicProduct(category, slug);
   if (!product) return {};
   const name = productName(locale, product.name);
 
@@ -50,7 +51,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function ProductPage({ params }: PageProps) {
   const { locale, category: categorySlug, slug } = await params;
   setRequestLocale(locale);
-  const product = getProduct(categorySlug, slug);
+  // A delisted product is removed by the public loader, so it 404s here.
+  const product = await getPublicProduct(categorySlug, slug);
   const category = getCategory(categorySlug);
   if (!product || !category) notFound();
 
@@ -211,7 +213,9 @@ export default async function ProductPage({ params }: PageProps) {
                   {product.technicalSpecs.map((row, i) => (
                     <tr key={row.labelKey} className="border-b border-outline-variant last:border-0">
                       <th className="w-1/3 bg-surface-container-high px-4 py-3 text-technical-data text-on-surface-variant">
-                        {t(row.labelKey)}
+                        {/* An operator can add a spec row whose key has no message
+                            yet; showing the key beats failing the page. */}
+                        {t.has(row.labelKey) ? t(row.labelKey) : row.labelKey}
                       </th>
                       <td
                         className={`px-4 py-3 text-body-sm text-on-surface ${i % 2 === 0 ? "bg-surface" : "bg-surface-container-low"}`}

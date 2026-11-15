@@ -12,17 +12,19 @@ type NavItem = {
   icon: string;
   /** Accounts are owner-only. */
   ownerOnly?: boolean;
+  /** Content editing: owners and editors, never sales. */
+  content?: boolean;
 };
 
 const ITEMS: NavItem[] = [
   { href: "/admin", label: "概览", icon: "dashboard" },
   { href: "/admin/inquiries", label: "询盘", icon: "inbox" },
+  { href: "/admin/products", label: "产品", icon: "widgets", content: true },
   { href: "/admin/users", label: "账号", icon: "group", ownerOnly: true },
 ];
 
 /** Sections the next phase will add; shown disabled so nobody hits a 404. */
 const COMING_SOON = [
-  { label: "产品", icon: "widgets" },
   { label: "文案", icon: "edit_note" },
   { label: "公告", icon: "campaign" },
 ];
@@ -34,7 +36,9 @@ function isActive(pathname: string, href: string) {
 
 export function AdminNav({ role }: { role: Role }) {
   const pathname = usePathname() ?? "";
-  const items = ITEMS.filter((item) => !item.ownerOnly || role === "owner");
+  const items = ITEMS.filter(
+    (item) => (!item.ownerOnly || role === "owner") && (!item.content || role !== "sales"),
+  );
 
   return (
     <nav aria-label="后台导航" className="flex flex-row gap-1 overflow-x-auto md:flex-col md:overflow-visible">

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { suggestProducts } from "@/lib/data/products";
+import { suggestPublicProducts } from "@/lib/catalog";
 import { isAppLocale } from "@/lib/locales";
 import { productName } from "@/lib/translated";
 
@@ -17,7 +17,8 @@ export async function GET(request: Request) {
   const requested = params.get("locale") ?? "";
   const locale = isAppLocale(requested) ? requested : "en";
 
-  const items = suggestProducts(trimmed, 8, locale).map((hit) => ({
+  // Delisted products are already filtered out and no hit carries a price.
+  const items = (await suggestPublicProducts(trimmed, 8, locale)).map((hit) => ({
     ...hit,
     name: productName(locale, hit.name),
   }));

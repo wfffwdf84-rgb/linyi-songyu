@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
-import { getHomeFeaturedProducts } from "@/lib/data/products";
+import { getPublicFeaturedProducts } from "@/lib/catalog";
 import type { Product } from "@/lib/data/products";
 
 type FeaturedGroupProps = {
@@ -38,7 +38,7 @@ function FeaturedGroup({ title, href, moreLabel, products }: FeaturedGroupProps)
 
 export async function HomeFeaturedProducts() {
   const t = await getTranslations("home");
-  const { brakeDiscs, radiators } = getHomeFeaturedProducts();
+  const { brakeDiscs, radiators } = await getPublicFeaturedProducts();
 
   return (
     <section className="bg-surface px-margin-mobile py-8 md:px-margin-desktop md:py-16">

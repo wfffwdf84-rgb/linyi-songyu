@@ -6,7 +6,7 @@ import { ProductCard } from "@/components/catalog/ProductCard";
 import { ProductSearchForm } from "@/components/catalog/ProductSearchForm";
 import { SiteShell } from "@/components/layout/SiteShell";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
-import { searchProducts } from "@/lib/data/products";
+import { searchPublicProducts } from "@/lib/catalog";
 import { pageAlternates } from "@/lib/locales";
 
 type Props = {
@@ -43,7 +43,7 @@ export default async function PartsIndexPage({ params, searchParams }: Props) {
 
   const t = await getTranslations("catalog");
   const tNav = await getTranslations("nav");
-  const results = searchProducts(q, locale);
+  const results = await searchPublicProducts(q, locale);
 
   return (
     <SiteShell>

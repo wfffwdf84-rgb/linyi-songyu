@@ -8,7 +8,7 @@ import { SiteShell } from "@/components/layout/SiteShell";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { Link } from "@/i18n/navigation";
 import { categories, findCategoryBrand, getCategory } from "@/lib/data/categories";
-import { getProductsByCategory } from "@/lib/data/products";
+import { getPublicProductsByCategory } from "@/lib/catalog";
 import { loc } from "@/lib/locale";
 import { routing } from "@/i18n/routing";
 import { pageAlternates } from "@/lib/locales";
@@ -55,7 +55,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
 
   const brandKey = Array.isArray(query.brand) ? query.brand[0] : query.brand;
   const brand = findCategoryBrand(category, brandKey);
-  const products = getProductsByCategory(slug);
+  const products = await getPublicProductsByCategory(slug);
   const tNav = await getTranslations("nav");
   const categoryName = tr(locale, category.name.en, category.name.zh);
   const brandName = brand ? loc(locale, brand.en, brand.zh) : undefined;

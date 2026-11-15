@@ -2,7 +2,7 @@ import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
-import { getProductsByCategory } from "@/lib/data/products";
+import { getPublicProductsByCategory } from "@/lib/catalog";
 import { inquiryTypeFromProduct } from "@/lib/inquiry";
 
 const featured = [
@@ -49,6 +49,11 @@ const more = [
 
 export async function HomeCategoryShowcase() {
   const t = await getTranslations("home");
+  // Counts come from the visible catalogue, so a delisted product stops counting.
+  const counts = new Map<string, number>();
+  for (const cat of [...featured, ...more]) {
+    counts.set(cat.slug, (await getPublicProductsByCategory(cat.slug)).length);
+  }
 
   return (
     <section className="bg-surface-container-low px-margin-mobile py-12 md:px-margin-desktop md:py-16">
@@ -71,7 +76,7 @@ export async function HomeCategoryShowcase() {
               desc={t(cat.descKey)}
               href={cat.href}
               image={cat.image}
-              countLabel={t("catCount", { count: getProductsByCategory(cat.slug).length })}
+              countLabel={t("catCount", { count: counts.get(cat.slug) ?? 0 })}
               explore={t("catExplore")}
               inquire={t("catInquire")}
               inquiryType={inquiryTypeFromProduct(cat.slug)}
@@ -86,7 +91,7 @@ export async function HomeCategoryShowcase() {
               desc={t(cat.descKey)}
               href={cat.href}
               image={cat.image}
-              countLabel={t("catCount", { count: getProductsByCategory(cat.slug).length })}
+              countLabel={t("catCount", { count: counts.get(cat.slug) ?? 0 })}
               explore={t("catExplore")}
               inquire={t("catInquire")}
               inquiryType={inquiryTypeFromProduct(cat.slug)}
