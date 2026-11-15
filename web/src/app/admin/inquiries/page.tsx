@@ -118,8 +118,12 @@ export default async function AdminInquiriesPage() {
                     </a>
                   ) : null}
                   {inquiry.company ? (
-                    <span className="text-body-md text-on-surface-variant">{inquiry.company}</span>
-                  ) : null}
+                    <span className="rounded bg-secondary-container px-2 py-0.5 text-body-md text-on-secondary-container">
+                      公司 {inquiry.company}
+                    </span>
+                  ) : (
+                    <span className="text-body-sm text-on-surface-variant">公司未填</span>
+                  )}
                 </div>
 
                 {ipCountry || numberCountry || placedAt ? (

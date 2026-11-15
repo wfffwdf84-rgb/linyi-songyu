@@ -160,6 +160,9 @@ export default async function AdminOverviewPage() {
                   {inquiryTimeLabel(inquiry.receivedAt)}
                 </span>
                 <span className="text-on-surface">{countryText(inquiry.ipCountry?.toUpperCase() || UNKNOWN_COUNTRY)}</span>
+                <span className="text-technical-data text-on-surface">
+                  公司 <span className={inquiry.company ? "" : "text-on-surface-variant"}>{inquiry.company || "未填"}</span>
+                </span>
                 <span className="text-technical-data text-on-surface">{inquiry.contact}</span>
                 {inquiry.types.length > 0 ? (
                   <span className="text-on-surface-variant">{inquiryTypesLabelZh(inquiry.types)}</span>
