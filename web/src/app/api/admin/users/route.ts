@@ -7,6 +7,7 @@ import {
   normalizeUsername,
   requireRole,
   updateAdminUser,
+  type AdminRole,
 } from "@/lib/admin-auth";
 
 const STATUS: Record<string, number> = {
@@ -74,10 +75,21 @@ export async function PATCH(request: Request) {
   const id = typeof body?.id === "string" ? body.id.trim() : "";
   if (!id) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
 
-  const patch: { disabled?: boolean; password?: string } = {};
+  const patch: {
+    disabled?: boolean;
+    password?: string;
+    name?: string;
+    role?: AdminRole;
+    username?: string;
+  } = {};
   if (typeof body?.disabled === "boolean") patch.disabled = body.disabled;
   if (typeof body?.password === "string") patch.password = body.password;
-  if (patch.disabled === undefined && patch.password === undefined) {
+  if (typeof body?.name === "string") patch.name = body.name;
+  if (typeof body?.username === "string") patch.username = body.username;
+  if (isAdminRole(body?.role)) patch.role = body.role;
+  // Renaming the account you are signed in as is allowed; the session keys on the
+  // id, so the cookie keeps working afterwards.
+  if (Object.keys(patch).length === 0) {
     return NextResponse.json({ ok: false, error: "invalid_password" }, { status: 400 });
   }
   // Locking yourself out mid-session is always a mistake; another owner must do it.

@@ -28,7 +28,8 @@ const SESSION_TTL_SEC = 60 * 60 * 12;
 const SCRYPT_KEYLEN = 64;
 const PASSWORD_MIN = 8;
 const PASSWORD_MAX = 128;
-const USERNAME_PATTERN = /^[a-z0-9][a-z0-9._-]{2,31}$/;
+// Chinese names are what the team actually types, so Han characters are allowed.
+const USERNAME_PATTERN = /^[\p{Script=Han}a-z0-9][\p{Script=Han}a-z0-9._-]{2,31}$/u;
 const NAME_MAX = 40;
 
 export const adminRoles = ["owner", "editor", "sales"] as const;
@@ -260,7 +261,9 @@ function toView(user: AdminUser): AdminUserView {
 }
 
 export function normalizeUsername(value: unknown) {
-  return typeof value === "string" ? value.trim().toLowerCase() : "";
+  // NFKC folds the full-width forms a Chinese IME produces (ＡＢＣ / １) onto the
+  // plain ones, so a name typed on two machines still matches one account.
+  return typeof value === "string" ? value.normalize("NFKC").trim().toLowerCase() : "";
 }
 
 export function normalizeAdminName(value: unknown, fallback: string) {
@@ -394,25 +397,55 @@ export async function createAdminUser(input: {
 
 export async function updateAdminUser(
   id: string,
-  patch: { disabled?: boolean; password?: string },
+  patch: {
+    disabled?: boolean;
+    password?: string;
+    name?: string;
+    role?: AdminRole;
+    username?: string;
+  },
 ): Promise<AdminUserView> {
+  const nextUsername =
+    typeof patch.username === "string" ? normalizeUsername(patch.username) : undefined;
+  if (nextUsername !== undefined && !isValidAdminUsername(nextUsername)) {
+    throw new AdminAuthError("invalid_username");
+  }
+  if (patch.role !== undefined && !isAdminRole(patch.role)) {
+    throw new AdminAuthError("invalid_role");
+  }
+
   const users = await mutateUsers((current) => {
     const index = current.findIndex((user) => user.id === id);
     if (index === -1) throw new AdminAuthError("not_found");
     const found = current[index];
     const next: AdminUser = { ...found };
+
     if (typeof patch.disabled === "boolean") next.disabled = patch.disabled;
+    if (nextUsername !== undefined && nextUsername !== found.username) {
+      if (current.some((user) => user.id !== id && user.username === nextUsername)) {
+        throw new AdminAuthError("username_taken");
+      }
+      next.username = nextUsername;
+    }
+    if (typeof patch.name === "string") {
+      next.name = normalizeAdminName(patch.name, found.name || found.username);
+    }
+    if (patch.role !== undefined) next.role = patch.role;
     if (typeof patch.password === "string") {
       if (!isValidAdminPassword(patch.password)) throw new AdminAuthError("invalid_password");
       next.salt = newSalt();
       next.passwordHash = hashPassword(patch.password, next.salt);
     }
-    // An owner that disables every other owner would lock the deployment out of
-    // account management, so the last enabled owner always stays.
-    const enabledOwners = current
+
+    // Disabling or demoting every owner would lock the deployment out of account
+    // management, so the last enabled owner always stays. An account list that
+    // somehow has no enabled owner already is left alone rather than frozen.
+    const ownersBefore = current.filter((user) => user.role === "owner" && !user.disabled).length;
+    const ownersAfter = current
       .map((user, position) => (position === index ? next : user))
-      .filter((user) => user.role === "owner" && !user.disabled);
-    if (found.role === "owner" && enabledOwners.length === 0) throw new AdminAuthError("last_owner");
+      .filter((user) => user.role === "owner" && !user.disabled).length;
+    if (ownersBefore > 0 && ownersAfter === 0) throw new AdminAuthError("last_owner");
+
     return current.map((user, position) => (position === index ? next : user));
   });
   const updated = users.find((item) => item.id === id);

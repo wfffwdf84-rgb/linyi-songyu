@@ -18,7 +18,7 @@ type UserRow = {
 const ROLE_LABELS: Record<Role, string> = { owner: "所有者", editor: "运营", sales: "业务员" };
 
 const ERRORS: Record<string, string> = {
-  invalid_username: "用户名需 3–32 位，只用字母、数字和 . _ -",
+  invalid_username: "用户名需 3–32 位：中文、字母、数字或 . _ -",
   invalid_password: "密码至少 8 位。",
   invalid_role: "请选择有效的角色。",
   username_taken: "该用户名已存在。",
@@ -53,6 +53,42 @@ export function AdminUserManager({ users, currentUserId }: { users: UserRow[]; c
 
   const [editingId, setEditingId] = useState("");
   const [newPassword, setNewPassword] = useState("");
+
+  const [profileId, setProfileId] = useState("");
+  const [profileName, setProfileName] = useState("");
+  const [profileUsername, setProfileUsername] = useState("");
+  const [profileRole, setProfileRole] = useState<Role>("sales");
+
+  function openProfile(user: UserRow) {
+    if (profileId === user.id) {
+      setProfileId("");
+      return;
+    }
+    setProfileId(user.id);
+    setProfileName(user.name);
+    setProfileUsername(user.username);
+    setProfileRole(user.role);
+    setEditingId("");
+    setError("");
+  }
+
+  async function onUpdateProfile(user: UserRow) {
+    setBusy(true);
+    setError("");
+    const failure = await send("PATCH", {
+      id: user.id,
+      name: profileName,
+      username: profileUsername,
+      role: profileRole,
+    });
+    setBusy(false);
+    if (failure) {
+      setError(ERRORS[failure] ?? "保存失败。");
+      return;
+    }
+    setProfileId("");
+    router.refresh();
+  }
 
   async function onCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -213,6 +249,48 @@ export function AdminUserManager({ users, currentUserId }: { users: UserRow[]; c
               >
                 改密码
               </button>
+              <button
+                type="button"
+                onClick={() => openProfile(user)}
+                className="rounded border border-outline-variant px-3 py-1 text-technical-data text-on-surface-variant hover:border-primary"
+              >
+                编辑资料
+              </button>
+              {profileId === user.id ? (
+                <span className="flex flex-wrap items-center gap-2">
+                  <input
+                    value={profileName}
+                    onChange={(event) => setProfileName(event.target.value)}
+                    placeholder="姓名"
+                    className="w-28 rounded-lg border-2 border-outline-variant bg-surface px-3 py-1 text-body-sm text-on-surface focus:border-primary focus:ring-0"
+                  />
+                  <input
+                    value={profileUsername}
+                    onChange={(event) => setProfileUsername(event.target.value)}
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    placeholder="用户名"
+                    className="w-32 rounded-lg border-2 border-outline-variant bg-surface px-3 py-1 text-body-sm text-on-surface focus:border-primary focus:ring-0"
+                  />
+                  <select
+                    value={profileRole}
+                    onChange={(event) => setProfileRole(event.target.value as Role)}
+                    className="rounded-lg border-2 border-outline-variant bg-surface px-3 py-1 text-body-sm text-on-surface focus:border-primary focus:ring-0"
+                  >
+                    <option value="owner">所有者</option>
+                    <option value="editor">运营</option>
+                    <option value="sales">业务员</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => void onUpdateProfile(user)}
+                    disabled={busy || !profileUsername}
+                    className="rounded bg-primary px-3 py-1 text-technical-data font-semibold text-on-primary disabled:opacity-60"
+                  >
+                    保存
+                  </button>
+                </span>
+              ) : null}
               {editingId === user.id ? (
                 <span className="flex flex-wrap items-center gap-2">
                   <input
