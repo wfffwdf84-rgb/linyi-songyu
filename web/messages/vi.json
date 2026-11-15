@@ -383,7 +383,8 @@
     "lineStock": "Kho Linyi",
     "lineInquiry": "Yêu cầu",
     "added": "Đã thêm",
-    "moqHint": "Đặt tối thiểu 50 cái"
+    "moqHint": "Đặt tối thiểu 50 cái",
+    "companyHint": "Thêm tên công ty để nhận báo giá nhanh hơn."
   },
   "about": {
     "title": "Giới thiệu",

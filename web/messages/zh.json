@@ -383,7 +383,8 @@
     "needHelp": "需要帮助？",
     "viewQuality": "查看质检与物流",
     "type_land": "陆运",
-    "moqHint": "50件起订"
+    "moqHint": "50件起订",
+    "companyHint": "填写公司名，报价更快。"
   },
   "about": {
     "title": "关于我们",

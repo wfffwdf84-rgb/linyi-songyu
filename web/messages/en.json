@@ -383,7 +383,8 @@
     "needHelp": "Need help?",
     "viewQuality": "View quality & logistics",
     "type_land": "Land freight",
-    "moqHint": "MOQ 50 pcs"
+    "moqHint": "MOQ 50 pcs",
+    "companyHint": "Add your company name for a faster quote."
   },
   "about": {
     "title": "About Us",

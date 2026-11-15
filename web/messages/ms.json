@@ -383,7 +383,8 @@
     "lineStock": "Stok Linyi",
     "lineInquiry": "Pertanyaan",
     "added": "Ditambah",
-    "moqHint": "MOQ 50 pcs"
+    "moqHint": "MOQ 50 pcs",
+    "companyHint": "Sertakan nama syarikat anda untuk sebut harga yang lebih cepat."
   },
   "about": {
     "title": "Tentang kami",

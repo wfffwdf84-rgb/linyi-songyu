@@ -354,6 +354,7 @@ export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
               placeholder={t("companyPlaceholder")}
               className="w-full rounded-lg border-2 border-outline-variant bg-surface px-4 py-3 text-body-md text-on-surface focus:border-primary focus:ring-0"
             />
+            <p className="mt-1.5 text-body-sm text-on-surface-variant">{t("companyHint")}</p>
           </div>
           <div>
             <label className="mb-2 block text-technical-data text-on-surface-variant">

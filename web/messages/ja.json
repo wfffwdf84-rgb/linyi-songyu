@@ -383,7 +383,8 @@
     "lineStock": "臨沂在庫",
     "lineInquiry": "問い合わせ",
     "added": "追加済み",
-    "moqHint": "最小ロット 50個"
+    "moqHint": "最小ロット 50個",
+    "companyHint": "会社名をご記入いただくと、お見積もりが早くなります。"
   },
   "about": {
     "title": "会社概要",

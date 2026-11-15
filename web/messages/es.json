@@ -383,7 +383,8 @@
     "lineStock": "Stock Linyi",
     "lineInquiry": "Consulta",
     "added": "Añadido",
-    "moqHint": "Pedido mín. 50 pzas"
+    "moqHint": "Pedido mín. 50 pzas",
+    "companyHint": "Indica el nombre de tu empresa para recibir la cotización más rápido."
   },
   "about": {
     "title": "Sobre nosotros",

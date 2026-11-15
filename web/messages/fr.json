@@ -383,7 +383,8 @@
     "lineStock": "Stock Linyi",
     "lineInquiry": "Demande",
     "added": "Ajouté",
-    "moqHint": "Qté min. 50 pcs"
+    "moqHint": "Qté min. 50 pcs",
+    "companyHint": "Ajoutez le nom de votre entreprise pour un devis plus rapide."
   },
   "about": {
     "title": "À propos",

@@ -383,7 +383,8 @@
     "lineStock": "Stok Linyi",
     "lineInquiry": "Permintaan",
     "added": "Ditambahkan",
-    "moqHint": "MOQ 50 buah"
+    "moqHint": "MOQ 50 buah",
+    "companyHint": "Cantumkan nama perusahaan Anda agar penawaran lebih cepat."
   },
   "about": {
     "title": "Tentang kami",
