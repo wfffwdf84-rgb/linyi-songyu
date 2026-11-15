@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
 import { WhatsAppIcon } from "@/components/ui/BrandIcons";
-import { siteConfig } from "@/lib/site";
+import { inquiryWhatsAppHref, siteConfig } from "@/lib/site";
 import { track } from "@/lib/analytics";
 
 /**
@@ -19,9 +19,20 @@ export function MessageBox() {
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const [reference, setReference] = useState("");
+  /** The text the buyer just submitted; kept so the hand-off links carry it. */
+  const [fallbackBody, setFallbackBody] = useState("");
   const t = useTranslations("quote");
   const locale = useLocale();
   const messageRef = useRef<HTMLTextAreaElement>(null);
+
+  function composeBody(contact: string, message: string) {
+    const isZh = locale === "zh";
+    return [
+      isZh ? "【临沂松昱留言】" : "[Linyi Songyu Message]",
+      `${t("contact")}: ${contact}`,
+      `${t("msgLabel")}: ${message}`,
+    ].join("\n");
+  }
 
   useEffect(() => {
     if (open && !sent) messageRef.current?.focus();
@@ -36,9 +47,20 @@ export function MessageBox() {
     return () => document.removeEventListener("keydown", onKey);
   }, [open]);
 
+  /** After a failure, the hand-off links follow whatever is now on screen. */
+  function refreshFallback(event: FormEvent<HTMLFormElement>) {
+    if (!failed) return;
+    const data = new FormData(event.currentTarget);
+    setFallbackBody(
+      composeBody(String(data.get("contact") ?? ""), String(data.get("message") ?? "")),
+    );
+  }
+
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    const contact = String(data.get("contact") ?? "");
+    const message = String(data.get("message") ?? "");
     setBusy(true);
     setFailed(false);
     try {
@@ -48,15 +70,18 @@ export function MessageBox() {
         body: JSON.stringify({
           locale,
           page: window.location.pathname,
-          contact: String(data.get("contact") ?? ""),
-          message: String(data.get("message") ?? ""),
+          contact,
+          message,
           website: String(data.get("website") ?? ""),
         }),
       });
       const result = (await response.json().catch(() => null)) as
-        | { ok?: boolean; reference?: string }
+        | { ok?: boolean; reference?: string; error?: string }
         | null;
       if (!response.ok || !result?.ok) {
+        // A 5xx (or storage_unavailable) means the lead was not stored: keep the
+        // message on screen and give the buyer a way to reach sales directly.
+        setFallbackBody(composeBody(contact, message));
         setFailed(true);
         setBusy(false);
         return;
@@ -65,6 +90,7 @@ export function MessageBox() {
       setSent(true);
       track("generate_lead", { source: "message_box" });
     } catch {
+      setFallbackBody(composeBody(contact, message));
       setFailed(true);
     }
     setBusy(false);
@@ -111,7 +137,7 @@ export function MessageBox() {
               </a>
             </div>
           ) : (
-            <form onSubmit={onSubmit} className="space-y-3 p-4">
+            <form onSubmit={onSubmit} onChange={refreshFallback} className="space-y-3 p-4">
               <p className="text-body-sm text-on-surface-variant">{t("msgLead")}</p>
 
               <div>
@@ -151,12 +177,31 @@ export function MessageBox() {
               </div>
 
               {failed ? (
-                <p className="text-body-sm text-error">
-                  {t("msgFailed")}{" "}
-                  <a href={siteConfig.whatsapp} className="underline" target="_blank" rel="noopener noreferrer">
-                    WhatsApp
+                <div className="space-y-2 rounded-xl border-2 border-error bg-error-container p-3">
+                  <h3 className="flex items-start gap-2 text-technical-data font-semibold text-on-error-container">
+                    <MaterialIcon name="cloud_off" filled className="shrink-0 text-[20px]" />
+                    <span className="min-w-0 break-words">{t("fallbackTitle")}</span>
+                  </h3>
+                  <p className="text-body-sm text-on-error-container">{t("fallbackBody")}</p>
+                  <a
+                    href={inquiryWhatsAppHref(fallbackBody)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-3 py-3 text-center text-technical-data font-semibold text-white hover:brightness-110"
+                  >
+                    <WhatsAppIcon className="h-5 w-5 shrink-0" />
+                    <span className="min-w-0 break-words">{t("fallbackWhatsApp")}</span>
                   </a>
-                </p>
+                  <a
+                    href={`mailto:${siteConfig.email}?subject=${encodeURIComponent(
+                      t("fallbackMailSubject"),
+                    )}&body=${encodeURIComponent(fallbackBody)}`}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-outline-variant bg-surface px-3 py-2 text-center text-body-sm text-on-surface hover:border-primary"
+                  >
+                    <MaterialIcon name="mail" className="shrink-0 text-primary" />
+                    <span className="min-w-0 break-words">{t("fallbackEmail")}</span>
+                  </a>
+                </div>
               ) : null}
 
               <button

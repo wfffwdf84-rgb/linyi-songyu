@@ -65,6 +65,7 @@ export default async function AdminProductsPage({ searchParams }: Props) {
   const current = Math.min(page, pageCount);
   const rows = hits.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
   const edited = all.filter((product) => product.overridden).length;
+  const added = all.filter((product) => product.isNew).length;
   const delisted = all.filter((product) => product.hidden).length;
 
   const pageHref = (target: number) => {
@@ -82,14 +83,24 @@ export default async function AdminProductsPage({ searchParams }: Props) {
           <MaterialIcon name="widgets" className="text-primary" />
           产品
         </h1>
-        <p className="text-body-sm text-on-surface-variant">
-          共 {all.length} 个产品 · 已修改 {edited} 个 · 已下架 {delisted} 个
-        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-body-sm text-on-surface-variant">
+            共 {all.length} 个产品 · 后台新增 {added} 个 · 已修改 {edited} 个 · 已下架 {delisted} 个
+          </p>
+          <Link
+            href="/admin/products/new"
+            className="inline-flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-body-md font-semibold text-on-primary"
+          >
+            <MaterialIcon name="add" className="text-[18px]" />
+            新建产品
+          </Link>
+        </div>
       </div>
 
       <p className="rounded-xl border border-outline-variant bg-surface-container-low p-4 text-body-sm text-on-surface-variant">
-        产品基础数据仍保存在代码里，这里的修改作为「覆盖层」保存在 Blob，前台渲染时叠加。
-        价格仅内部可见，前台任何页面都不会显示。本阶段只支持编辑已有产品，新增与图片上传在下一阶段。
+        代码里的产品仍然只读，修改作为「覆盖层」保存在 Blob，前台渲染时叠加；新产品则是完整记录，
+        同样存在覆盖层里。价格仅内部可见，前台任何页面都不会显示，新增产品也一样。
+        新增产品排在最前面，删除只对新增产品开放（代码里的产品可以「恢复原始内容」）。
       </p>
 
       {overlayStatus === "not_configured" ? (
@@ -173,6 +184,11 @@ export default async function AdminProductsPage({ searchParams }: Props) {
                   </td>
                   <td className="px-4 py-3 align-top">
                     <span className="flex flex-wrap gap-1">
+                      {product.isNew ? (
+                        <span className="rounded bg-primary-fixed px-2 py-0.5 text-label-caps text-on-primary-fixed">
+                          新增
+                        </span>
+                      ) : null}
                       {product.overridden ? (
                         <span className="rounded bg-primary-fixed px-2 py-0.5 text-label-caps text-on-primary-fixed">
                           已改

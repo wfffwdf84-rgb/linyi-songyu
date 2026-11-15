@@ -384,7 +384,12 @@
     "lineInquiry": "Yêu cầu",
     "added": "Đã thêm",
     "moqHint": "Đặt tối thiểu 50 cái",
-    "companyHint": "Thêm tên công ty để nhận báo giá nhanh hơn."
+    "companyHint": "Thêm tên công ty để nhận báo giá nhanh hơn.",
+    "fallbackTitle": "Gửi trực tiếp cho chúng tôi",
+    "fallbackBody": "Hệ thống yêu cầu báo giá tạm thời không khả dụng nên nội dung chưa được lưu. Thông tin bạn đã nhập vẫn còn trong biểu mẫu bên dưới — hãy gửi cho chúng tôi qua WhatsApp hoặc email, chúng tôi sẽ phản hồi ngay.",
+    "fallbackWhatsApp": "Gửi qua WhatsApp",
+    "fallbackEmail": "Gửi bằng email",
+    "fallbackMailSubject": "Yêu cầu từ trang web"
   },
   "about": {
     "title": "Giới thiệu",

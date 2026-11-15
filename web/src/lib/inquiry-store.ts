@@ -1,5 +1,13 @@
 import { createCipheriv, createDecipheriv, hkdfSync, randomBytes, randomUUID } from "node:crypto";
-import { list, put } from "@vercel/blob";
+import {
+  BlobError,
+  BlobServiceNotAvailable,
+  BlobServiceRateLimited,
+  BlobStoreNotFoundError,
+  BlobStoreSuspendedError,
+  list,
+  put,
+} from "@vercel/blob";
 
 const PREFIX = "inquiries/";
 
@@ -34,6 +42,25 @@ export type StoredInquiry = {
 
 export function inquiryStorageConfigured() {
   return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+}
+
+/**
+ * True when the write failed because the Blob store itself is unavailable -
+ * suspended, missing, rate-limited or down - rather than because the request
+ * was bad. The API turns this into `storage_unavailable`, which the form uses
+ * to offer the WhatsApp/email hand-off instead of a dead end.
+ */
+export function inquiryStorageUnavailable(error: unknown): boolean {
+  if (error instanceof BlobStoreSuspendedError) return true;
+  if (error instanceof BlobStoreNotFoundError) return true;
+  if (error instanceof BlobServiceNotAvailable) return true;
+  if (error instanceof BlobServiceRateLimited) return true;
+  if (error instanceof BlobError && /suspend|quota|unavailable/i.test(error.message)) return true;
+  // `fetch` throws a TypeError when the store cannot be reached at all.
+  if (error instanceof TypeError) return true;
+  // A read/write that ran out of time is also "the store did not answer".
+  if (error instanceof DOMException && error.name === "TimeoutError") return true;
+  return false;
 }
 
 function encryptionKey(): Buffer | null {

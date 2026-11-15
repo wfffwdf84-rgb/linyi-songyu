@@ -384,7 +384,12 @@
     "lineInquiry": "Consulta",
     "added": "Añadido",
     "moqHint": "Pedido mín. 50 pzas",
-    "companyHint": "Indica el nombre de tu empresa para recibir la cotización más rápido."
+    "companyHint": "Indica el nombre de tu empresa para recibir la cotización más rápido.",
+    "fallbackTitle": "Envíanoslo directamente",
+    "fallbackBody": "Nuestro sistema de consultas no está disponible en este momento, así que no se guardó. Tus datos siguen en el formulario de abajo: envíanoslos por WhatsApp o por correo y te responderemos enseguida.",
+    "fallbackWhatsApp": "Enviar por WhatsApp",
+    "fallbackEmail": "Enviar por correo",
+    "fallbackMailSubject": "Consulta desde el sitio web"
   },
   "about": {
     "title": "Sobre nosotros",

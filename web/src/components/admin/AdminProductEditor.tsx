@@ -2,11 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { AdminImageField } from "@/components/admin/AdminImageField";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
 
 type Localised = { en: string; zh: string };
 type SpecRow = { labelKey: string; value: Localised };
 type Currency = "USD" | "CNY" | "RMB";
+
+type Price = { amount: number; currency: Currency; note?: string };
 
 type EditorProduct = {
   slug: string;
@@ -14,17 +17,22 @@ type EditorProduct = {
   name: Localised;
   description: Localised;
   specs: SpecRow[];
+  image: string;
   inStock: boolean;
   hidden: boolean;
   overridden: boolean;
-  price: { amount: number; currency: Currency; note?: string } | null;
+  /** A product created in the panel: its URL 404s after a delete. */
+  isNew: boolean;
+  price: Price | null;
 };
 
 type SeedValues = {
   name: Localised;
   description: Localised;
   specs: SpecRow[];
+  image: string;
   inStock: boolean;
+  price: Price | null;
 };
 
 const ERRORS: Record<string, string> = {
@@ -33,6 +41,7 @@ const ERRORS: Record<string, string> = {
   invalid_price: "价格无效：需为 0 – 10,000,000 之间的数字，且币种有效。",
   invalid_specs: "规格无效：labelKey 只能用字母/数字/下划线（字母开头），值上限 200 字，最多 40 行。",
   invalid_slug: "产品标识无效。",
+  invalid_image: "图片地址无效：只接受 https 的 Blob / Google 图片地址，或站内 /images/… 路径。",
   invalid_patch: "提交的内容无法识别，请刷新页面重试。",
   not_found: "产品不存在。",
   not_configured: "服务器未配置 Blob 存储或加密密钥，无法保存。",
@@ -71,6 +80,7 @@ export function AdminProductEditor({
   const [priceNote, setPriceNote] = useState(product.price?.note ?? "");
   const [inStock, setInStock] = useState(product.inStock);
   const [hidden, setHidden] = useState(product.hidden);
+  const [image, setImage] = useState(product.image);
   const [specs, setSpecs] = useState<EditableRow[]>(rowsFromSpecs(product.specs));
 
   const [busy, setBusy] = useState(false);
@@ -91,9 +101,10 @@ export function AdminProductEditor({
   }
 
   /**
-   * Puts the form back to the seed values. Nothing is written until 保存 is
-   * pressed: with every field back at the seed the diff is empty and the save
-   * deletes the override, which is how a product returns to "原始".
+   * Puts the form back to the base values (the seed entry, or the record a
+   * product was created with). Nothing is written until 保存 is pressed: with
+   * every field back at the base the diff is empty and the save deletes the
+   * override. 恢复原始内容 uses the DELETE route instead, which clears it at once.
    */
   function loadSeedValues() {
     setNameEn(seed.name.en);
@@ -101,12 +112,82 @@ export function AdminProductEditor({
     setDescriptionEn(seed.description.en);
     setDescriptionZh(seed.description.zh);
     setSpecs(rowsFromSpecs(seed.specs));
+    setImage(seed.image);
     setInStock(seed.inStock);
     setHidden(false);
-    setPriceAmount("");
-    setPriceNote("");
+    setPriceAmount(seed.price ? String(seed.price.amount) : "");
+    setPriceCurrency(seed.price?.currency ?? "USD");
+    setPriceNote(seed.price?.note ?? "");
     setSaved("");
     setError("");
+  }
+
+  /** Clears the overlay for this product: every field returns to the original. */
+  async function onRestore() {
+    const message = product.isNew
+      ? "恢复为创建时的内容？该产品仍是新增产品，不会被删除。"
+      : "恢复为代码里的原始内容？覆盖层中该产品的修改会被清空。";
+    if (!window.confirm(message)) return;
+
+    setBusy(true);
+    setError("");
+    setSaved("");
+    try {
+      const response = await fetch(`/api/admin/products?slug=${encodeURIComponent(product.slug)}`, {
+        method: "DELETE",
+      });
+      const data = (await response.json().catch(() => null)) as
+        | { ok?: boolean; error?: string; reset?: boolean }
+        | null;
+      if (!response.ok || !data?.ok) {
+        setError(ERRORS[data?.error ?? ""] ?? "恢复失败，请稍后重试。");
+        return;
+      }
+      loadSeedValues();
+      setOverridden(false);
+      setSaved(
+        product.isNew
+          ? "已恢复为创建时的内容，前台页面正在重新生成。"
+          : "已恢复为原始内容，前台页面正在重新生成。",
+      );
+      router.refresh();
+    } catch {
+      setError("网络错误，恢复失败。");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Removes a product the panel added. Seed products can only be restored. */
+  async function onDelete() {
+    if (
+      !window.confirm(
+        `删除产品「${product.partNumber}」？它会从前台、搜索结果和 sitemap 中消失，且无法撤销。`,
+      )
+    ) {
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setSaved("");
+    try {
+      const response = await fetch(`/api/admin/products?slug=${encodeURIComponent(product.slug)}`, {
+        method: "DELETE",
+      });
+      const data = (await response.json().catch(() => null)) as
+        | { ok?: boolean; error?: string; deleted?: boolean }
+        | null;
+      if (!response.ok || !data?.ok) {
+        setError(ERRORS[data?.error ?? ""] ?? "删除失败，请稍后重试。");
+        return;
+      }
+      router.push("/admin/products");
+      router.refresh();
+    } catch {
+      setError("网络错误，删除失败。");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function onSave() {
@@ -136,6 +217,7 @@ export function AdminProductEditor({
             price,
             inStock,
             hidden,
+            image,
             specs: specs.map((row) => ({
               labelKey: row.labelKey.trim(),
               value: { en: row.en, zh: row.zh },
@@ -211,6 +293,18 @@ export function AdminProductEditor({
             />
           </label>
         </div>
+      </section>
+
+      <section className="rounded-xl border border-outline-variant bg-surface-container-lowest p-5">
+        <h2 className="mb-1 flex items-center gap-2 text-headline-md text-on-surface">
+          <MaterialIcon name="image" className="text-primary" />
+          图片
+        </h2>
+        <p className="mb-4 text-body-sm text-on-surface-variant">
+          上传一张新图会得到 Blob 上的完整 https 地址；保存后产品页、列表卡片、搜索建议和
+          JSON-LD 都使用它。也可以直接填站内路径。
+        </p>
+        <AdminImageField value={image} onChange={setImage} slug={product.slug} disabled={busy} />
       </section>
 
       <section className="rounded-xl border border-outline-variant bg-surface-container-lowest p-5">
@@ -372,14 +466,29 @@ export function AdminProductEditor({
         </button>
         <button
           type="button"
-          onClick={loadSeedValues}
+          onClick={() => void onRestore()}
           disabled={busy}
           className="rounded-xl border border-outline-variant px-4 py-2 text-body-md text-on-surface-variant hover:border-primary disabled:opacity-60"
         >
-          载入原始内容
+          {product.isNew ? "恢复为创建时内容" : "恢复原始内容"}
         </button>
+        {product.isNew ? (
+          <button
+            type="button"
+            onClick={() => void onDelete()}
+            disabled={busy}
+            className="inline-flex items-center gap-1 rounded-xl border border-error px-4 py-2 text-body-md text-error hover:bg-error-container disabled:opacity-60"
+          >
+            <MaterialIcon name="delete" className="text-[18px]" />
+            删除该产品
+          </button>
+        ) : null}
         <span className="text-body-sm text-on-surface-variant">
-          {overridden ? "该产品有覆盖层修改" : "该产品当前为原始内容"}
+          {overridden
+            ? "该产品有覆盖层修改"
+            : product.isNew
+              ? "该新增产品当前为创建时的内容"
+              : "该产品当前为原始内容"}
         </span>
       </div>
     </div>

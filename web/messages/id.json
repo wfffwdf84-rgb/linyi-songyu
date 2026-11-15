@@ -384,7 +384,12 @@
     "lineInquiry": "Permintaan",
     "added": "Ditambahkan",
     "moqHint": "MOQ 50 buah",
-    "companyHint": "Cantumkan nama perusahaan Anda agar penawaran lebih cepat."
+    "companyHint": "Cantumkan nama perusahaan Anda agar penawaran lebih cepat.",
+    "fallbackTitle": "Kirim langsung kepada kami",
+    "fallbackBody": "Sistem permintaan kami sedang tidak tersedia, jadi pesan ini belum tersimpan. Data Anda masih ada di formulir di bawah — kirimkan kepada kami lewat WhatsApp atau email dan kami akan segera membalas.",
+    "fallbackWhatsApp": "Kirim lewat WhatsApp",
+    "fallbackEmail": "Kirim lewat email",
+    "fallbackMailSubject": "Permintaan dari situs web"
   },
   "about": {
     "title": "Tentang kami",

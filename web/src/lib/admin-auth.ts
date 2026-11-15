@@ -9,17 +9,20 @@ import {
   timingSafeEqual,
 } from "node:crypto";
 import { cookies } from "next/headers";
-import { del, list, put } from "@vercel/blob";
+import { put } from "@vercel/blob";
+import { readBlobDocument } from "@/lib/blob-read";
 
 /** Separate from the factory session, so signing in to one does not open the other. */
 export const ADMIN_COOKIE = "songyu_admin";
 
-/** One encrypted document holds every operator account. */
+/**
+ * One encrypted document holds every operator account. This fixed pathname is
+ * the only copy and the only read: see lib/blob-read.ts for why the document is
+ * fetched with a cache-busting GET instead of list(). Snapshots were removed
+ * because list() is an Advanced Operation and the store was suspended for
+ * exceeding that quota.
+ */
 export const ADMIN_USERS_PATH = "admin/users.json";
-
-/** Immutable per-write copies of that document; the newest one is authoritative. */
-const USERS_SNAPSHOT_PREFIX = "admin/users/";
-const USERS_SNAPSHOT_KEEP = 5;
 
 /** Username the first login seeds the owner account with. */
 export const ADMIN_BOOTSTRAP_USERNAME = "admin";
@@ -148,81 +151,50 @@ function decode(payload: Buffer): AdminUser[] {
   }));
 }
 
-type BlobRef = { url: string; pathname: string; uploadedAt: Date };
-
-/** Newest first; the pathname breaks ties between writes in the same millisecond. */
-function newestFirst(a: BlobRef, b: BlobRef) {
-  return b.uploadedAt.getTime() - a.uploadedAt.getTime() || b.pathname.localeCompare(a.pathname);
-}
-
-async function readEncrypted(url: string): Promise<AdminUser[]> {
-  const response = await fetch(url, { cache: "no-store" });
-  if (!response.ok) throw new Error("admin accounts could not be read");
-  return decode(Buffer.from(await response.arrayBuffer()));
-}
-
 /**
  * Returns null only when no account document exists yet, which is what lets the
  * first login seed an owner. A document that exists but cannot be read or
  * decrypted throws instead: silently falling back to bootstrap would overwrite
  * every account after a secret rotation.
  *
- * Public Blobs are CDN-cached for at least a minute - cacheControlMaxAge cannot
- * go below 60 seconds - so a document read straight back from a stable pathname
- * is the previous version: a just-created account stayed invisible and could be
- * created twice. Every write therefore lands on a fresh, immutable pathname,
- * and the newest one - found through list(), whose metadata is always current -
- * is authoritative. `admin/users.json` is still written on every change as the
- * documented canonical copy.
+ * The read is one GET of the fixed pathname with a fresh `?v=` (see
+ * lib/blob-read.ts). That is what makes a just-created account visible at once,
+ * without list(): the public CDN would otherwise serve the previous version for
+ * at least a minute.
  */
 async function readUsers(): Promise<AdminUser[] | null> {
-  const { blobs } = await list({ prefix: USERS_SNAPSHOT_PREFIX, limit: 200 });
-  const newest = blobs.slice().sort(newestFirst)[0];
-  if (newest) return readEncrypted(newest.url);
-
-  const { blobs: canonical } = await list({ prefix: ADMIN_USERS_PATH, limit: 1 });
-  const found = canonical.find((blob) => blob.pathname === ADMIN_USERS_PATH);
-  return found ? readEncrypted(found.url) : null;
+  const response = await readBlobDocument(ADMIN_USERS_PATH);
+  if (!response) return null;
+  return decode(Buffer.from(await response.arrayBuffer()));
 }
 
 async function writeUsers(users: AdminUser[]) {
-  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  await put(`${USERS_SNAPSHOT_PREFIX}${stamp}-${randomUUID()}.json`, encode(users), {
-    access: "public", // the object itself is ciphertext; the store is public
-    contentType: "application/octet-stream",
-    addRandomSuffix: false,
-    cacheControlMaxAge: 0,
-  });
   await put(ADMIN_USERS_PATH, encode(users), {
-    access: "public",
+    access: "public", // the object itself is ciphertext; the store is public
     contentType: "application/octet-stream",
     addRandomSuffix: false,
     allowOverwrite: true,
     cacheControlMaxAge: 0,
   });
-  await pruneSnapshots();
 }
 
-/** Housekeeping only: a failed prune must never fail the write that caused it. */
-async function pruneSnapshots() {
-  try {
-    const { blobs } = await list({ prefix: USERS_SNAPSHOT_PREFIX, limit: 200 });
-    if (blobs.length <= USERS_SNAPSHOT_KEEP) return;
-    const stale = blobs
-      .slice()
-      .sort(newestFirst)
-      .slice(USERS_SNAPSHOT_KEEP)
-      .map((blob) => blob.url);
-    if (stale.length > 0) await del(stale);
-  } catch (error) {
-    console.error("admin account snapshot prune failed", error);
-  }
-}
-
-/** Read, change, write the whole document; the account list is the only object
- * this panel rewrites, and it is small enough to replace wholesale. */
+/**
+ * Read, change, write the whole document; the account list is the only object
+ * this panel rewrites, and it is small enough to replace wholesale.
+ *
+ * A read that fails must not be treated as an empty list: that would let a
+ * bootstrap or a rename replace every account. It surfaces as `unavailable`
+ * instead, which the admin API answers with 503.
+ */
 async function mutateUsers(apply: (users: AdminUser[]) => AdminUser[]): Promise<AdminUser[]> {
-  const next = apply((await readUsers()) ?? []);
+  let current: AdminUser[] | null;
+  try {
+    current = await readUsers();
+  } catch (error) {
+    console.error("admin accounts could not be read before writing", error);
+    throw new AdminAuthError("unavailable");
+  }
+  const next = apply(current ?? []);
   await writeUsers(next);
   return next;
 }
@@ -351,19 +323,34 @@ export function requireRole(
 
 /* -------------------------------------------------------------- accounts */
 
+/**
+ * Fail-open list for the account page: a suspended store shows "no accounts"
+ * rather than a 500. Contrast mutateUsers, which refuses to write over a
+ * document it could not read.
+ */
 export async function listAdminUsers(): Promise<AdminUserView[]> {
-  const users = await readUsers();
-  if (!users) return [];
-  return users
-    .slice()
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
-    .map(toView);
+  try {
+    const users = await readUsers();
+    if (!users) return [];
+    return users
+      .slice()
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+      .map(toView);
+  } catch (error) {
+    console.error("admin accounts could not be listed", error);
+    return [];
+  }
 }
 
 export async function getAdminUser(userId: string): Promise<AdminUserView | null> {
-  const users = await readUsers();
-  const user = users?.find((item) => item.id === userId);
-  return user ? toView(user) : null;
+  try {
+    const users = await readUsers();
+    const user = users?.find((item) => item.id === userId);
+    return user ? toView(user) : null;
+  } catch (error) {
+    console.error("admin account could not be read", error);
+    return null;
+  }
 }
 
 export async function createAdminUser(input: {
@@ -461,7 +448,15 @@ export async function updateAdminUser(
 export async function verifyAdminLogin(rawUsername: string, password: string): Promise<AdminUserView | null> {
   const username = normalizeUsername(rawUsername);
   if (!username || !password || password.length > 256) return null;
-  const users = await readUsers();
+  let users: AdminUser[] | null;
+  try {
+    users = await readUsers();
+  } catch (error) {
+    // Never fall through to bootstrap here: "unreadable" is not "empty", and
+    // seeding an owner over an unreadable document would wipe the accounts.
+    console.error("admin accounts could not be read for login", error);
+    throw new AdminAuthError("unavailable");
+  }
   if (!users || users.length === 0) {
     const seed = bootstrapPassword();
     if (username !== ADMIN_BOOTSTRAP_USERNAME || seed.length < PASSWORD_MIN) return null;

@@ -384,7 +384,12 @@
     "lineInquiry": "문의",
     "added": "추가됨",
     "moqHint": "최소주문 50개",
-    "companyHint": "회사명을 입력하시면 견적을 더 빠르게 받으실 수 있습니다."
+    "companyHint": "회사명을 입력하시면 견적을 더 빠르게 받으실 수 있습니다.",
+    "fallbackTitle": "WhatsApp으로 바로 보내기",
+    "fallbackBody": "현재 문의 시스템을 일시적으로 사용할 수 없어 내용이 저장되지 않았습니다. 입력하신 내용은 아래 양식에 그대로 남아 있습니다. WhatsApp 또는 이메일로 보내주시면 바로 답변드리겠습니다.",
+    "fallbackWhatsApp": "WhatsApp으로 보내기",
+    "fallbackEmail": "이메일로 보내기",
+    "fallbackMailSubject": "웹사이트 문의"
   },
   "about": {
     "title": "회사 소개",

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  AdminAuthError,
   adminAuthConfigured,
   createSessionCookie,
   verifyAdminLogin,
@@ -36,7 +37,10 @@ export async function POST(request: Request) {
     user = await verifyAdminLogin(username, password);
   } catch (error) {
     console.error("admin login failed", error);
-    return NextResponse.json({ error: "unavailable" }, { status: 500 });
+    // An unreadable account store is "not available", not a server fault: 503
+    // keeps the panel honest instead of a bare 500.
+    const status = error instanceof AdminAuthError && error.code === "unavailable" ? 503 : 500;
+    return NextResponse.json({ error: "unavailable" }, { status });
   }
 
   // One answer for a wrong username and a wrong password: nothing to enumerate.

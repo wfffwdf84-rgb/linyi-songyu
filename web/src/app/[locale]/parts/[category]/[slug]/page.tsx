@@ -18,7 +18,7 @@ import { AddToQuoteButton } from "@/components/quote/AddToQuoteButton";
 import { ProductBackButton } from "@/components/product/ProductBackButton";
 import { addToQuoteButtonClass } from "@/lib/quote-button";
 import { localePath, pageAlternates } from "@/lib/locales";
-import { socialCard } from "@/lib/social-card";
+import { absoluteImageUrl, socialCard } from "@/lib/social-card";
 import { brandListLabel } from "@/lib/brand-names";
 import { productName, productDescription, tr } from "@/lib/translated";
 
@@ -31,6 +31,16 @@ export async function generateStaticParams() {
     getAllProductPaths().map(({ category, slug }) => ({ locale, category, slug })),
   );
 }
+
+/**
+ * Products added in the admin panel are not in the build: the seed list above
+ * cannot see the overlay, which is read from Blob. The default (true) is stated
+ * explicitly because on-demand generation is what makes a new product's page
+ * exist at all - a `false` here would 404 every product that was not in the
+ * build. The first request renders it, and revalidateProduct() refreshes the
+ * cached copy after every save or delete.
+ */
+export const dynamicParams = true;
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale, category, slug } = await params;
@@ -78,7 +88,8 @@ export default async function ProductPage({ params }: PageProps) {
           name,
           sku: product.partNumber,
           description,
-          image: `${siteConfig.url}${product.image}`,
+          // Absolute, and correct for both a site path and an uploaded Blob URL.
+          image: absoluteImageUrl(product.image),
           brand: { "@type": "Brand", name: product.brands.join(", ") },
           offers: {
             "@type": "Offer",

@@ -384,7 +384,12 @@
     "viewQuality": "查看质检与物流",
     "type_land": "陆运",
     "moqHint": "50件起订",
-    "companyHint": "填写公司名，报价更快。"
+    "companyHint": "填写公司名，报价更快。",
+    "fallbackTitle": "直接联系我们",
+    "fallbackBody": "询盘系统暂时不可用，本次内容未保存。您填写的信息仍保留在下方表单中，请点击下方按钮通过 WhatsApp 或邮件发给我们，我们会马上回复。",
+    "fallbackWhatsApp": "通过 WhatsApp 发送",
+    "fallbackEmail": "改用邮件",
+    "fallbackMailSubject": "来自网站的询盘"
   },
   "about": {
     "title": "关于我们",

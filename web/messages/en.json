@@ -384,7 +384,12 @@
     "viewQuality": "View quality & logistics",
     "type_land": "Land freight",
     "moqHint": "MOQ 50 pcs",
-    "companyHint": "Add your company name for a faster quote."
+    "companyHint": "Add your company name for a faster quote.",
+    "fallbackTitle": "Send it to us directly",
+    "fallbackBody": "Our inquiry system is temporarily unavailable, so this was not saved. Your details are still in the form below — send them on WhatsApp or by email and we will answer right away.",
+    "fallbackWhatsApp": "Send on WhatsApp",
+    "fallbackEmail": "Send by email",
+    "fallbackMailSubject": "Inquiry from the website"
   },
   "about": {
     "title": "About Us",

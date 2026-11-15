@@ -1,18 +1,20 @@
-import { createCipheriv, createDecipheriv, hkdfSync, randomBytes, randomUUID } from "node:crypto";
+import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from "node:crypto";
 import { unstable_cache } from "next/cache";
-import { del, list, put } from "@vercel/blob";
+import { put } from "@vercel/blob";
+import { readBlobDocument } from "@/lib/blob-read";
 import type { Product, ProductSpec } from "@/lib/data/products";
 
 /**
  * Operator edits live in an overlay document, never in the product seed. The
  * seed stays in code exactly as it was imported, so a restore is "delete the
  * override" rather than a data rebuild.
+ *
+ * This fixed pathname is the only copy: it is read with one GET (see
+ * lib/blob-read.ts) and overwritten in place. Snapshot copies were removed with
+ * the list() call that used to find the newest one - list() is an Advanced
+ * Operation, and the store was suspended for exceeding that quota.
  */
 export const PRODUCT_OVERRIDES_PATH = "content/products.json";
-
-/** Immutable per-write copies; the newest one is authoritative. */
-const SNAPSHOT_PREFIX = "content/products/";
-const SNAPSHOT_KEEP = 5;
 
 /**
  * Tag on the fetch that reads the overlay, so a save can expire it explicitly
@@ -20,15 +22,21 @@ const SNAPSHOT_KEEP = 5;
  */
 export const PRODUCT_OVERRIDES_TAG = "product-overrides";
 
-/** The store is public, so every read and write goes through this budget. */
-const READ_TIMEOUT_MS = 5000;
-
 const NAME_MAX = 200;
 const DESCRIPTION_MAX = 2000;
 const SPEC_VALUE_MAX = 200;
 const SPEC_LABEL_MAX = 60;
 const SPEC_ROWS_MAX = 40;
 const PRICE_NOTE_MAX = 200;
+const PART_NUMBER_MAX = 60;
+const BRAND_MAX = 80;
+const COMPATIBLE_MAX = 400;
+const IMAGE_MAX = 500;
+/** A product added from the panel is a full record, so the document earns a cap. */
+const NEW_PRODUCTS_MAX = 500;
+
+/** Lowercase, 3-80 characters, no leading/trailing dash: a URL segment. */
+export const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]{2,79}$/;
 
 /** Above this a product price is almost certainly a typo, not a price. */
 export const PRICE_MAX = 10_000_000;
@@ -54,15 +62,50 @@ export type ProductOverride = {
   /** Delisted: the public loaders drop the product, the data stays. */
   hidden?: boolean;
   specs?: ProductSpec[];
+  /** The photo is editable too: an uploaded Blob URL or a /images/... path. */
+  image?: string;
 };
 
 export type Overrides = Record<string, ProductOverride>;
 
+/**
+ * A product that exists only in the overlay: it has no seed entry, so every
+ * field is stored in full rather than as a diff. Editing one still writes an
+ * override (diffed against this record), which is what makes "restore" mean the
+ * same thing for both kinds of product.
+ */
+export type NewProduct = Product & {
+  /** The primary brand, kept beside `brands` because the form asks for one. */
+  brand: string;
+  price?: ProductPrice;
+  createdAt: string;
+  createdBy?: string;
+};
+
+/**
+ * v2 added `newProducts` and `deletedProducts`, and v1 documents (which only
+ * had `overrides`) must still load: a missing array is read as empty.
+ */
 export type OverrideDocument = {
-  version: 1;
+  version: 2;
   updatedAt: string;
   overrides: Overrides;
+  newProducts: NewProduct[];
+  deletedProducts: string[];
 };
+
+/** The whole overlay as the rest of the app consumes it. */
+export type Overlay = {
+  overrides: Overrides;
+  newProducts: NewProduct[];
+  deletedProducts: string[];
+};
+
+export const emptyOverlay = (): Overlay => ({
+  overrides: {},
+  newProducts: [],
+  deletedProducts: [],
+});
 
 /** Raised for request-level problems; the code becomes the API error string. */
 export class ProductStoreError extends Error {
@@ -120,96 +163,174 @@ function encode(document: OverrideDocument) {
   return new Blob([new Uint8Array(Buffer.concat([iv, cipher.getAuthTag(), body]))]);
 }
 
-function decode(payload: Buffer): Overrides {
+/* ------------------------------------------------------- document parsing */
+
+/**
+ * Reads a stored document back without trusting it. A field that no longer
+ * parses is dropped rather than thrown on: a half-broken overlay must not take
+ * the whole catalogue down, and the shape is rewritten on the next save.
+ */
+function coerceText(value: unknown, max: number): string {
+  if (typeof value !== "string") return "";
+  return value.replace(/[\u0000-\u001f<>]/g, "").slice(0, max).trim();
+}
+
+function coerceLocalised(value: unknown, max: number): { en: string; zh: string } {
+  const input = (typeof value === "object" && value !== null ? value : {}) as Record<string, unknown>;
+  const en = coerceText(input.en, max);
+  return { en, zh: coerceText(input.zh, max) || en };
+}
+
+function coerceSpecRows(value: unknown): ProductSpec[] {
+  if (!Array.isArray(value)) return [];
+  const rows: ProductSpec[] = [];
+  for (const item of value.slice(0, SPEC_ROWS_MAX)) {
+    if (typeof item !== "object" || item === null) continue;
+    const row = item as Record<string, unknown>;
+    const labelKey = coerceText(row.labelKey, SPEC_LABEL_MAX);
+    if (!labelKey) continue;
+    rows.push({ labelKey, value: coerceLocalised(row.value, SPEC_VALUE_MAX) });
+  }
+  return rows;
+}
+
+function coercePrice(value: unknown): ProductPrice | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
+  const row = value as Record<string, unknown>;
+  const amount = typeof row.amount === "number" ? row.amount : Number.NaN;
+  const currency = row.currency;
+  if (!Number.isFinite(amount) || amount < 0 || amount > PRICE_MAX) return undefined;
+  if (typeof currency !== "string" || !(productCurrencies as readonly string[]).includes(currency)) {
+    return undefined;
+  }
+  const note = coerceText(row.note, PRICE_NOTE_MAX);
+  const price: ProductPrice = { amount, currency: currency as ProductCurrency };
+  if (note) price.note = note;
+  return price;
+}
+
+/** One stored product, or null when the record is too broken to render. */
+function coerceNewProduct(value: unknown): NewProduct | null {
+  if (typeof value !== "object" || value === null) return null;
+  const row = value as Record<string, unknown>;
+  const slug = coerceText(row.slug, 80).toLowerCase();
+  if (!SLUG_PATTERN.test(slug)) return null;
+  const partNumber = coerceText(row.partNumber, PART_NUMBER_MAX);
+  if (!partNumber) return null;
+  const categorySlug = coerceText(row.categorySlug, 80);
+  if (!categorySlug) return null;
+  const name = coerceLocalised(row.name, NAME_MAX);
+  if (!name.en) return null;
+  const image = coerceText(row.image, IMAGE_MAX);
+  if (!image) return null;
+
+  const brands = Array.isArray(row.brands)
+    ? row.brands.map((brand) => coerceText(brand, BRAND_MAX)).filter(Boolean)
+    : [];
+  const brand = coerceText(row.brand, BRAND_MAX) || brands[0] || "";
+  const specs = coerceSpecRows(row.specs);
+  const technicalSpecs = coerceSpecRows(row.technicalSpecs);
+
+  const product: NewProduct = {
+    slug,
+    partNumber,
+    brand,
+    brands: brands.length > 0 ? brands : brand ? [brand] : [],
+    categorySlug,
+    name,
+    description: coerceLocalised(row.description, DESCRIPTION_MAX),
+    image,
+    inStock: row.inStock !== false,
+    specs,
+    technicalSpecs: technicalSpecs.length > 0 ? technicalSpecs : specs,
+    compatibleMachines: coerceText(row.compatibleMachines, COMPATIBLE_MAX),
+    oemNumbers: Array.isArray(row.oemNumbers)
+      ? row.oemNumbers.map((number) => coerceText(number, PART_NUMBER_MAX)).filter(Boolean)
+      : [],
+    createdAt: coerceText(row.createdAt, 40) || new Date(0).toISOString(),
+  };
+  const createdBy = coerceText(row.createdBy, 64);
+  if (createdBy) product.createdBy = createdBy;
+  const price = coercePrice(row.price);
+  if (price) product.price = price;
+  return product;
+}
+
+function decode(payload: Buffer): Overlay {
   const key = encryptionKey();
   const decipher = createDecipheriv("aes-256-gcm", key, payload.subarray(0, 12));
   decipher.setAuthTag(payload.subarray(12, 28));
   const json = Buffer.concat([decipher.update(payload.subarray(28)), decipher.final()]).toString("utf8");
-  const data = JSON.parse(json) as { overrides?: unknown };
-  if (typeof data.overrides !== "object" || data.overrides === null) {
+  const parsed = JSON.parse(json) as unknown;
+  if (typeof parsed !== "object" || parsed === null) {
     throw new Error("product overrides are malformed");
   }
-  return data.overrides as Overrides;
+  const document = parsed as Record<string, unknown>;
+  if (
+    typeof document.overrides !== "object" ||
+    document.overrides === null ||
+    Array.isArray(document.overrides)
+  ) {
+    throw new Error("product overrides are malformed");
+  }
+
+  // v1 documents have no newProducts: reading a missing array as empty is the
+  // whole compatibility story. Entries are re-validated one by one so one bad
+  // record cannot hide the rest of the document.
+  const newProducts: NewProduct[] = [];
+  const stored = Array.isArray(document.newProducts)
+    ? document.newProducts.slice(0, NEW_PRODUCTS_MAX)
+    : [];
+  for (const entry of stored) {
+    const product = coerceNewProduct(entry);
+    if (product && !newProducts.some((item) => item.slug === product.slug)) {
+      newProducts.push(product);
+    }
+  }
+
+  const deletedProducts = Array.isArray(document.deletedProducts)
+    ? document.deletedProducts.filter(
+        (slug): slug is string => typeof slug === "string" && SLUG_PATTERN.test(slug),
+      )
+    : [];
+
+  return {
+    overrides: document.overrides as Overrides,
+    newProducts,
+    deletedProducts: [...new Set(deletedProducts)].slice(-NEW_PRODUCTS_MAX),
+  };
 }
 
 /* --------------------------------------------------------------- transport */
 
-type BlobRef = { url: string; pathname: string; uploadedAt: Date };
-
-/** Newest first; the pathname breaks ties between writes in the same millisecond. */
-function newestFirst(a: BlobRef, b: BlobRef) {
-  return b.uploadedAt.getTime() - a.uploadedAt.getTime() || b.pathname.localeCompare(a.pathname);
-}
-
-async function fetchOverrides(url: string): Promise<Overrides> {
-  // Public Blobs are CDN-cached for at least a minute and cacheControlMaxAge
-  // cannot go below 60 seconds, so a document read back from a stable pathname
-  // is the previous version. Snapshots are therefore written to a fresh,
-  // immutable pathname and the newest one - found through list(), whose
-  // metadata is always current - is authoritative.
-  const response = await fetch(url, { signal: AbortSignal.timeout(READ_TIMEOUT_MS) });
-  if (!response.ok) {
-    throw new Error(`product overrides could not be read (${response.status})`);
-  }
+/**
+ * null only when no overlay document exists yet. Throws when the store is
+ * suspended, unreachable or the document cannot be decrypted.
+ */
+async function loadOverlay(): Promise<Overlay | null> {
+  if (!productStorageConfigured()) return null;
+  const response = await readBlobDocument(PRODUCT_OVERRIDES_PATH);
+  if (!response) return null;
   return decode(Buffer.from(await response.arrayBuffer()));
 }
 
-/** null only when no overlay document exists yet. Throws when it cannot be read. */
-async function loadOverrides(): Promise<Overrides | null> {
-  if (!productStorageConfigured()) return null;
-  const signal = AbortSignal.timeout(READ_TIMEOUT_MS);
-  const { blobs } = await list({ prefix: SNAPSHOT_PREFIX, limit: 200, abortSignal: signal });
-  const newest = blobs.slice().sort(newestFirst)[0];
-  if (newest) return fetchOverrides(newest.url);
-
-  const { blobs: canonical } = await list({
-    prefix: PRODUCT_OVERRIDES_PATH,
-    limit: 1,
-    abortSignal: signal,
-  });
-  const found = canonical.find((blob) => blob.pathname === PRODUCT_OVERRIDES_PATH);
-  return found ? fetchOverrides(found.url) : null;
-}
-
-async function writeOverrideDocument(overrides: Overrides) {
+async function writeOverrideDocument(overlay: Overlay) {
   if (!productStorageConfigured()) throw new ProductStoreError("not_configured");
-  // Encoding twice gives each object its own iv, which a shared ciphertext would reuse.
   const document: OverrideDocument = {
-    version: 1,
+    // Any read of a v1 document is upgraded on the next write.
+    version: 2,
     updatedAt: new Date().toISOString(),
-    overrides,
+    overrides: overlay.overrides,
+    newProducts: overlay.newProducts,
+    deletedProducts: overlay.deletedProducts,
   };
-  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  await put(`${SNAPSHOT_PREFIX}${stamp}-${randomUUID()}.json`, encode(document), {
-    access: "public", // the object itself is ciphertext; the store is public
-    contentType: "application/octet-stream",
-    addRandomSuffix: false,
-    cacheControlMaxAge: 0,
-  });
   await put(PRODUCT_OVERRIDES_PATH, encode(document), {
-    access: "public",
+    access: "public", // the object itself is ciphertext; the store is public
     contentType: "application/octet-stream",
     addRandomSuffix: false,
     allowOverwrite: true,
     cacheControlMaxAge: 0,
   });
-  await pruneSnapshots();
-}
-
-/** Housekeeping only: a failed prune must never fail the write that caused it. */
-async function pruneSnapshots() {
-  try {
-    const { blobs } = await list({ prefix: SNAPSHOT_PREFIX, limit: 200 });
-    if (blobs.length <= SNAPSHOT_KEEP) return;
-    const stale = blobs
-      .slice()
-      .sort(newestFirst)
-      .slice(SNAPSHOT_KEEP)
-      .map((blob) => blob.url);
-    if (stale.length > 0) await del(stale);
-  } catch (error) {
-    console.error("product override snapshot prune failed", error);
-  }
 }
 
 /* -------------------------------------------------------------- public API */
@@ -221,29 +342,38 @@ export type OverlayReadStatus = "" | "not_configured" | "unreadable";
  * path revalidation expires it.
  *
  * A strictly request-scoped read does not survive a 4,225-page build: every
- * prerendered page would call list() on the Blob API, which rate-limits long
- * before the build finishes, and every page would then quietly render seed
- * data (measured: the build hit "Too many requests" from Blob). The data cache
- * is the right home for this document - it is one small object shared by the
- * whole catalogue - and every save calls revalidateTag(PRODUCT_OVERRIDES_TAG),
- * so an edit is never missed: the matching revalidatePath() calls regenerate
- * the pages and the tag expires this entry. A failed read is cached as well, so
- * one outage does not turn into one retry per page.
+ * prerendered page would fetch the Blob document, which rate-limits long before
+ * the build finishes, and every page would then quietly render seed data
+ * (measured: the build hit "Too many requests" from Blob). The data cache is the
+ * right home for this document - it is one small object shared by the whole
+ * catalogue - and every save calls revalidateTag(PRODUCT_OVERRIDES_TAG), so an
+ * edit is never missed: the matching revalidatePath() calls regenerate the pages
+ * and the tag expires this entry. A failed read is cached as well, so one outage
+ * does not turn into one retry per page.
+ *
+ * Each cache miss costs exactly one GET of the fixed document and no list()
+ * call, so the read no longer consumes an Advanced Operation.
  */
-const loadOverridesCached = unstable_cache(
-  async (): Promise<{ overrides: Overrides; status: OverlayReadStatus }> => {
-    if (!productOverridesConfigured()) return { overrides: {}, status: "not_configured" };
+const loadOverlayCached = unstable_cache(
+  async (): Promise<{ overlay: Overlay; status: OverlayReadStatus }> => {
+    if (!productOverridesConfigured()) {
+      return { overlay: emptyOverlay(), status: "not_configured" };
+    }
     try {
-      return { overrides: (await loadOverrides()) ?? {}, status: "" };
+      return { overlay: (await loadOverlay()) ?? emptyOverlay(), status: "" };
     } catch (error) {
       console.error(
         "product overrides could not be read; falling back to the seed catalogue",
         error,
       );
-      return { overrides: {}, status: "unreadable" };
+      // Fail open: the seed catalogue renders, and any product added from the
+      // panel is simply absent until the store is readable again.
+      return { overlay: emptyOverlay(), status: "unreadable" };
     }
   },
-  ["product-overrides-v1"],
+  // v2 because the document gained newProducts: a v1-shaped cached entry must
+  // not be reused across a deploy.
+  ["product-overrides-v2"],
   { tags: [PRODUCT_OVERRIDES_TAG], revalidate: false },
 );
 
@@ -252,8 +382,8 @@ const loadOverridesCached = unstable_cache(
  * slow overlay renders the seed catalogue instead. A broken overlay must never
  * turn a product page into a 500.
  */
-export async function readOverrides(): Promise<Overrides> {
-  return (await readOverridesReport()).overrides;
+export async function readOverlay(): Promise<Overlay> {
+  return (await readOverlayReport()).overlay;
 }
 
 /**
@@ -261,39 +391,134 @@ export async function readOverrides(): Promise<Overrides> {
  * could not be read" instead of quietly showing every product as unedited,
  * which is what a fail-open read looks like from the inside.
  */
+export async function readOverlayReport(): Promise<{
+  overlay: Overlay;
+  status: OverlayReadStatus;
+}> {
+  return loadOverlayCached();
+}
+
+/** Pre-v2 callers: the overrides alone. */
+export async function readOverrides(): Promise<Overrides> {
+  return (await readOverlay()).overrides;
+}
+
+/** Pre-v2 callers: the overrides alone, with the read outcome. */
 export async function readOverridesReport(): Promise<{
   overrides: Overrides;
   status: OverlayReadStatus;
 }> {
-  return loadOverridesCached();
+  const { overlay, status } = await loadOverlayCached();
+  return { overrides: overlay.overrides, status };
 }
 
 /**
- * Writes the whole document. Deliberately thin: callers go through
- * saveOverride(), which reads the current document first.
+ * Reads the current document before any mutation. A read failure throws instead
+ * of writing: the panel must not replace every other product's edits - or the
+ * products themselves - with an empty document.
  */
-export async function writeOverrides(overrides: Overrides): Promise<void> {
+async function readForWrite(): Promise<Overlay> {
   if (!productOverridesConfigured()) throw new ProductStoreError("not_configured");
-  await writeOverrideDocument(overrides);
-}
-
-/**
- * Read-modify-write of one slug. A read failure throws instead of writing: the
- * panel must not replace every other product's edits with an empty document.
- */
-export async function saveOverride(slug: string, override: ProductOverride): Promise<void> {
-  if (!productOverridesConfigured()) throw new ProductStoreError("not_configured");
-  let current: Overrides;
   try {
-    current = (await loadOverrides()) ?? {};
+    return (await loadOverlay()) ?? emptyOverlay();
   } catch (error) {
     console.error("product overrides could not be read before writing", error);
     throw new ProductStoreError("unavailable");
   }
-  const next: Overrides = { ...current };
-  if (Object.keys(override).length === 0) delete next[slug];
-  else next[slug] = override;
-  await writeOverrideDocument(next);
+}
+
+/**
+ * Writes the whole document. Deliberately thin: callers go through the
+ * read-modify-write helpers below.
+ */
+export async function writeOverlay(overlay: Overlay): Promise<void> {
+  if (!productOverridesConfigured()) throw new ProductStoreError("not_configured");
+  await writeOverrideDocument(overlay);
+}
+
+/** Replaces the overrides map, keeping the products the panel has added. */
+export async function writeOverrides(overrides: Overrides): Promise<void> {
+  const current = await readForWrite();
+  await writeOverrideDocument({ ...current, overrides });
+}
+
+/**
+ * Read-modify-write of one slug. The stored document keeps only the fields that
+ * differ from the base product, so reverting every field deletes the override.
+ */
+export async function saveOverride(slug: string, override: ProductOverride): Promise<void> {
+  const current = await readForWrite();
+  const overrides: Overrides = { ...current.overrides };
+  if (Object.keys(override).length === 0) delete overrides[slug];
+  else overrides[slug] = override;
+  await writeOverrideDocument({ ...current, overrides });
+}
+
+/** Removes one override without touching anything else ("restore original"). */
+export async function clearOverride(slug: string): Promise<void> {
+  const current = await readForWrite();
+  if (!current.overrides[slug]) return;
+  const overrides: Overrides = { ...current.overrides };
+  delete overrides[slug];
+  await writeOverrideDocument({ ...current, overrides });
+}
+
+/**
+ * Appends a product that has no seed entry. Duplicates are checked against the
+ * document here, and against the seed catalogue by the caller, which is the
+ * only place that can see the seed.
+ */
+export async function createNewProduct(
+  draft: NewProductDraft,
+  createdBy?: string,
+): Promise<NewProduct> {
+  const current = await readForWrite();
+  if (current.newProducts.length >= NEW_PRODUCTS_MAX) {
+    throw new ProductStoreError("too_many_products");
+  }
+  if (current.newProducts.some((product) => product.slug === draft.slug)) {
+    throw new ProductStoreError("slug_taken");
+  }
+  const lowerPart = draft.partNumber.toLowerCase();
+  if (current.newProducts.some((product) => product.partNumber.toLowerCase() === lowerPart)) {
+    throw new ProductStoreError("part_number_taken");
+  }
+
+  const product: NewProduct = {
+    ...draft,
+    createdAt: new Date().toISOString(),
+  };
+  if (createdBy) product.createdBy = createdBy;
+
+  // A slug that was deleted before becomes valid again; its tombstone and any
+  // leftover override are cleared so the new product starts from its own data.
+  const overrides: Overrides = { ...current.overrides };
+  delete overrides[product.slug];
+  const newProducts = [...current.newProducts, product];
+  const deletedProducts = current.deletedProducts.filter((slug) => slug !== product.slug);
+  await writeOverrideDocument({ overrides, newProducts, deletedProducts });
+  return product;
+}
+
+/**
+ * Removes a product the panel added. Seed products cannot be deleted this way:
+ * they live in code, and hiding one is the supported operation.
+ */
+export async function deleteNewProduct(slug: string): Promise<void> {
+  const current = await readForWrite();
+  if (!current.newProducts.some((product) => product.slug === slug)) {
+    throw new ProductStoreError("not_found");
+  }
+  const overrides: Overrides = { ...current.overrides };
+  delete overrides[slug];
+  const newProducts = current.newProducts.filter((product) => product.slug !== slug);
+  // The tombstone records what was removed. Readers also skip a product listed
+  // here, so a half-written document cannot resurrect a deleted entry.
+  const deletedProducts = [
+    ...current.deletedProducts.filter((item) => item !== slug),
+    slug,
+  ].slice(-NEW_PRODUCTS_MAX);
+  await writeOverrideDocument({ overrides, newProducts, deletedProducts });
 }
 
 export function hasOverride(overrides: Overrides, slug: string) {
@@ -330,6 +555,7 @@ export function applyOverride(product: Product, override?: ProductOverride): Cat
     next.description = mergeText(product.description, override.description);
   }
   if (typeof override.inStock === "boolean") next.inStock = override.inStock;
+  if (override.image) next.image = override.image;
   if (override.specs) {
     next.specs = copySpecs(override.specs);
     next.technicalSpecs = copySpecs(override.specs);
@@ -348,6 +574,7 @@ export type ProductOverridePatch = {
   inStock?: boolean;
   hidden?: boolean;
   specs?: ProductSpec[];
+  image?: string;
 };
 
 function text(value: unknown, max: number, code: string) {
@@ -413,6 +640,38 @@ function priceValue(value: unknown): ProductPrice | null | undefined {
   return price;
 }
 
+/**
+ * An image reference: an uploaded Blob URL, or a path inside the site. The
+ * allowed HTTPS hosts mirror `images.remotePatterns` in next.config.ts, so a
+ * saved image can always be rendered by <Image>.
+ */
+function imageValue(value: unknown): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== "string") throw new ProductStoreError("invalid_image");
+  const cleaned = value.replace(/[\u0000-\u001f<>]/g, "").trim();
+  if (!cleaned) return undefined;
+  if (cleaned.length > IMAGE_MAX) throw new ProductStoreError("invalid_image");
+  if (cleaned.startsWith("/")) {
+    // Protocol-relative URLs would escape the site and are not images we host.
+    if (cleaned.startsWith("//")) throw new ProductStoreError("invalid_image");
+    return cleaned;
+  }
+  let url: URL;
+  try {
+    url = new URL(cleaned);
+  } catch {
+    throw new ProductStoreError("invalid_image");
+  }
+  if (url.protocol !== "https:") throw new ProductStoreError("invalid_image");
+  const host = url.hostname.toLowerCase();
+  const allowed =
+    host === "lh3.googleusercontent.com" ||
+    host.endsWith(".public.blob.vercel-storage.com") ||
+    host.endsWith(".blob.vercel-storage.com");
+  if (!allowed) throw new ProductStoreError("invalid_image");
+  return cleaned;
+}
+
 /** Validates the form payload; throws ProductStoreError with a code the API maps to a status. */
 export function sanitizePatch(input: unknown): ProductOverridePatch {
   if (typeof input !== "object" || input === null) throw new ProductStoreError("invalid_patch");
@@ -428,6 +687,8 @@ export function sanitizePatch(input: unknown): ProductOverridePatch {
   if (typeof body.hidden === "boolean") patch.hidden = body.hidden;
   const specs = specRows(body.specs);
   if (specs !== undefined) patch.specs = specs;
+  const image = imageValue(body.image);
+  if (image) patch.image = image;
   return patch;
 }
 
@@ -476,6 +737,103 @@ export function buildOverride(product: Product, patch: ProductOverridePatch): Pr
   }
   if (patch.hidden === true) override.hidden = true;
   if (patch.specs && !sameSpecs(patch.specs, product.specs)) override.specs = patch.specs;
+  if (patch.image && patch.image !== product.image) override.image = patch.image;
 
   return override;
+}
+
+/* ---------------------------------------------------- new product validation */
+
+/** A product the panel adds; the storage record plus its creation stamp. */
+export type NewProductDraft = Omit<NewProduct, "createdAt" | "createdBy">;
+
+export type NewProductConstraints = {
+  /** Slugs and part numbers already in the seed catalogue. */
+  seedSlugs?: ReadonlySet<string>;
+  seedPartNumbers?: ReadonlySet<string>;
+  categorySlugs: ReadonlySet<string>;
+};
+
+function requiredSlug(value: unknown): string {
+  const slug = text(value, 80, "invalid_slug");
+  if (!slug) throw new ProductStoreError("invalid_slug");
+  const normalized = slug.toLowerCase();
+  if (!SLUG_PATTERN.test(normalized)) throw new ProductStoreError("invalid_slug");
+  return normalized;
+}
+
+/**
+ * The create form, validated in full. Uniqueness against the seed is the
+ * caller's job (only the catalogue can see the seed); uniqueness inside the
+ * document is enforced again by createNewProduct() under the same read.
+ */
+export function sanitizeNewProduct(
+  input: unknown,
+  constraints: NewProductConstraints,
+): NewProductDraft {
+  if (typeof input !== "object" || input === null) {
+    throw new ProductStoreError("invalid_patch");
+  }
+  const body = input as Record<string, unknown>;
+
+  const slug = requiredSlug(body.slug);
+  if (constraints.seedSlugs?.has(slug)) throw new ProductStoreError("slug_taken");
+
+  const partNumber = text(body.partNumber, PART_NUMBER_MAX, "invalid_part_number");
+  if (!partNumber) throw new ProductStoreError("invalid_part_number");
+  if (constraints.seedPartNumbers?.has(partNumber.toLowerCase())) {
+    throw new ProductStoreError("part_number_taken");
+  }
+
+  const brand = text(body.brand, BRAND_MAX, "invalid_brand");
+  if (!brand) throw new ProductStoreError("invalid_brand");
+
+  const categorySlug = text(body.categorySlug, 80, "invalid_category");
+  if (!categorySlug || !constraints.categorySlugs.has(categorySlug)) {
+    throw new ProductStoreError("invalid_category");
+  }
+
+  const name = localisedText(body.name, NAME_MAX, "invalid_name") ?? {};
+  const nameEn = name.en?.trim() ?? "";
+  if (!nameEn) throw new ProductStoreError("invalid_name");
+  const description = localisedText(body.description, DESCRIPTION_MAX, "invalid_description") ?? {};
+
+  const image = imageValue(body.image);
+  if (!image) throw new ProductStoreError("invalid_image");
+
+  const price = priceValue(body.price ?? null);
+  const specs = specRows(body.specs) ?? [];
+  const technicalSpecs = specRows(body.technicalSpecs) ?? [];
+
+  // Optional list of extra brands: the form asks for one, the record stores the
+  // list the catalogue searches and filters on.
+  const extraBrands: string[] = [];
+  if (Array.isArray(body.brands)) {
+    if (body.brands.length > 20) throw new ProductStoreError("invalid_brand");
+    for (const entry of body.brands) {
+      const value = text(entry, BRAND_MAX, "invalid_brand");
+      if (value) extraBrands.push(value);
+    }
+  }
+  const brands = [...new Set([brand, ...extraBrands])];
+
+  const draft: NewProductDraft = {
+    slug,
+    partNumber,
+    brand,
+    brands,
+    categorySlug,
+    name: { en: nameEn, zh: name.zh ?? nameEn },
+    description: { en: description.en ?? "", zh: description.zh ?? description.en ?? "" },
+    image,
+    inStock: typeof body.inStock === "boolean" ? body.inStock : true,
+    specs,
+    // The card reads `specs`, the product page table reads `technicalSpecs`;
+    // a form with only one table must fill both.
+    technicalSpecs: technicalSpecs.length > 0 ? technicalSpecs : specs,
+    compatibleMachines: text(body.compatibleMachines, COMPATIBLE_MAX, "invalid_compatible") ?? "",
+    oemNumbers: [],
+  };
+  if (price) draft.price = price;
+  return draft;
 }

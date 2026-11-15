@@ -18,6 +18,9 @@ const STATUS: Record<string, number> = {
   last_owner: 409,
   not_found: 404,
   not_configured: 503,
+  // The account document exists but the store could not be read: refuse the
+  // write (never overwrite it with an empty list) and say so with a 503.
+  unavailable: 503,
 };
 
 function failure(error: unknown) {

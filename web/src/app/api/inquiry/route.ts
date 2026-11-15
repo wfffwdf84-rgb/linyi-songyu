@@ -1,5 +1,10 @@
 import { NextResponse, after } from "next/server";
-import { inquiryStorageConfigured, rewriteInquiry, saveInquiry } from "@/lib/inquiry-store";
+import {
+  inquiryStorageConfigured,
+  inquiryStorageUnavailable,
+  rewriteInquiry,
+  saveInquiry,
+} from "@/lib/inquiry-store";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { toChinese } from "@/lib/translate";
 import { readVisitorGeo } from "@/lib/visitor-geo";
@@ -103,6 +108,12 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("inquiry save failed", error);
+    // Distinguish "the lead could not be stored" from "the request was bad": the
+    // form shows a WhatsApp/email hand-off for the former, so a suspended Blob
+    // store does not turn into a lost customer.
+    if (inquiryStorageUnavailable(error)) {
+      return NextResponse.json({ ok: false, error: "storage_unavailable" }, { status: 503 });
+    }
     return NextResponse.json({ ok: false, error: "save" }, { status: 500 });
   }
 }

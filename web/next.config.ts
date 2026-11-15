@@ -49,6 +49,20 @@ const nextConfig: NextConfig = {
         hostname: "lh3.googleusercontent.com",
         pathname: "/**",
       },
+      // Product photos uploaded from the admin panel land in Vercel Blob, at
+      // https://<store-id>.public.blob.vercel-storage.com/uploads/products/...
+      // Without these entries <Image> refuses the URL. The CSP below already
+      // lists the same hosts for img-src, so the two stay in step.
+      {
+        protocol: "https",
+        hostname: "*.public.blob.vercel-storage.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "*.blob.vercel-storage.com",
+        pathname: "/**",
+      },
     ],
   },
   async redirects() {

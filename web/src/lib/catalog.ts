@@ -9,21 +9,25 @@ import {
 } from "@/lib/data/products";
 import {
   applyOverride,
-  readOverrides,
-  readOverridesReport,
+  readOverlay,
+  readOverlayReport,
   type CatalogProduct,
+  type NewProduct,
   type OverlayReadStatus,
+  type ProductOverride,
   type ProductPrice,
 } from "@/lib/product-store";
 
 /**
- * A catalogue entry merged with its override, plus the two flags the admin
- * panel needs. `price` is internal; only toPublicProduct() may hand this object
- * to anything that renders for a visitor.
+ * A catalogue entry merged with its override, plus the flags the admin panel
+ * needs. `price` is internal; only toPublicProduct() may hand this object to
+ * anything that renders for a visitor.
  */
 export type AdminProduct = CatalogProduct & {
   hidden: boolean;
   overridden: boolean;
+  /** True for a product that only exists in the overlay, added from the panel. */
+  isNew: boolean;
 };
 
 /**
@@ -34,25 +38,54 @@ export type AdminProduct = CatalogProduct & {
  */
 function toPublicProduct(product: AdminProduct): Product {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- dropping the internal fields is the whole point
-  const { price: _price, hidden: _hidden, overridden: _overridden, ...visible } = product;
+  const { price: _price, hidden: _hidden, overridden: _overridden, isNew: _isNew, ...visible } =
+    product;
   return visible;
 }
 
 /**
- * The full catalogue with overrides applied, price included. Memoised for the
- * render pass, so one page that asks for a product, a category and the featured
- * strip still reads the overlay once.
+ * A stored new product's panel-only fields (brand, creation stamp) stay in the
+ * overlay: the public shape is the same Product every seed entry has.
+ */
+function fromNewProduct(product: NewProduct): CatalogProduct {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- panel-only fields
+  const { brand: _brand, createdAt: _createdAt, createdBy: _createdBy, ...rest } = product;
+  return rest;
+}
+
+function merge(base: CatalogProduct, override: ProductOverride | undefined, isNew: boolean): AdminProduct {
+  return {
+    ...applyOverride(base, override),
+    hidden: override?.hidden === true,
+    overridden: Boolean(override),
+    isNew,
+  };
+}
+
+/**
+ * The full catalogue with overrides applied, price included: seed products in
+ * their seed order, then the products added in the panel, newest first, so a
+ * new entry is visible on the first admin page instead of behind the pages of
+ * seed data.
+ *
+ * Memoised for the render pass, so one page that asks for a product, a category
+ * and the featured strip still reads the overlay once.
  */
 export const getAdminProducts = cache(async (): Promise<AdminProduct[]> => {
-  const overrides = await readOverrides();
-  return products.map((product) => {
-    const override = overrides[product.slug];
-    return {
-      ...applyOverride(product, override),
-      hidden: override?.hidden === true,
-      overridden: Boolean(override),
-    };
-  });
+  const { overrides, newProducts, deletedProducts } = await readOverlay();
+  const deleted = new Set(deletedProducts);
+  const seedSlugs = new Set(products.map((product) => product.slug));
+
+  const rows: AdminProduct[] = [];
+  for (const entry of newProducts.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt))) {
+    // A tombstoned or shadowed record is skipped rather than rendered twice.
+    if (deleted.has(entry.slug) || seedSlugs.has(entry.slug)) continue;
+    rows.push(merge(fromNewProduct(entry), overrides[entry.slug], true));
+  }
+  for (const product of products) {
+    rows.push(merge(product, overrides[product.slug], false));
+  }
+  return rows;
 });
 
 export const getAdminProduct = cache(async (slug: string): Promise<AdminProduct | null> => {
@@ -66,12 +99,25 @@ export function getSeedProduct(slug: string): Product | null {
 }
 
 /**
+ * The product an edit is diffed against: the seed entry when there is one, else
+ * the record the panel stored when the product was created. The API route uses
+ * it so "restore original" means the same thing for both kinds of product.
+ */
+export const getBaseProduct = cache(async (slug: string): Promise<CatalogProduct | null> => {
+  const seed = getSeedProduct(slug);
+  if (seed) return seed;
+  const { overlay } = await readOverlayReport();
+  const found = overlay.newProducts.find((product) => product.slug === slug);
+  return found ? fromNewProduct(found) : null;
+});
+
+/**
  * Whether the overlay could be read at all. Public pages do not care (they
  * fall back to the seed); the admin list does, because a failed read is
  * indistinguishable from "nothing has been edited yet".
  */
 export const getOverlayStatus = cache(async (): Promise<OverlayReadStatus> => {
-  return (await readOverridesReport()).status;
+  return (await readOverlayReport()).status;
 });
 
 /** Everything a visitor may see: hidden products removed, prices stripped. */

@@ -384,7 +384,12 @@
     "lineInquiry": "Pertanyaan",
     "added": "Ditambah",
     "moqHint": "MOQ 50 pcs",
-    "companyHint": "Sertakan nama syarikat anda untuk sebut harga yang lebih cepat."
+    "companyHint": "Sertakan nama syarikat anda untuk sebut harga yang lebih cepat.",
+    "fallbackTitle": "Hantar terus kepada kami",
+    "fallbackBody": "Sistem pertanyaan kami tidak tersedia buat sementara waktu, jadi maklumat ini belum disimpan. Butiran anda masih ada dalam borang di bawah — hantarkan kepada kami melalui WhatsApp atau e-mel dan kami akan balas segera.",
+    "fallbackWhatsApp": "Hantar melalui WhatsApp",
+    "fallbackEmail": "Hantar melalui e-mel",
+    "fallbackMailSubject": "Pertanyaan dari laman web"
   },
   "about": {
     "title": "Tentang kami",

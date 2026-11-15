@@ -384,7 +384,12 @@
     "lineInquiry": "Demande",
     "added": "Ajouté",
     "moqHint": "Qté min. 50 pcs",
-    "companyHint": "Ajoutez le nom de votre entreprise pour un devis plus rapide."
+    "companyHint": "Ajoutez le nom de votre entreprise pour un devis plus rapide.",
+    "fallbackTitle": "Envoyez-nous votre demande directement",
+    "fallbackBody": "Notre système de demandes est momentanément indisponible : votre message n'a pas été enregistré. Vos informations sont conservées dans le formulaire ci-dessous — envoyez-les-nous par WhatsApp ou par e-mail et nous vous répondrons tout de suite.",
+    "fallbackWhatsApp": "Envoyer sur WhatsApp",
+    "fallbackEmail": "Envoyer par e-mail",
+    "fallbackMailSubject": "Demande depuis le site web"
   },
   "about": {
     "title": "À propos",

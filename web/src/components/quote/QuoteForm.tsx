@@ -26,6 +26,28 @@ type QuoteFormProps = {
   initialTypes?: InquiryTypeId[];
 };
 
+type FormValues = {
+  company: string;
+  contact: string;
+  vin: string;
+  brand: string;
+  notes: string;
+};
+
+const emptyValues: FormValues = { company: "", contact: "", vin: "", brand: "", notes: "" };
+
+function readValues(form: HTMLFormElement | null): FormValues {
+  if (!form) return emptyValues;
+  const fd = new FormData(form);
+  return {
+    company: String(fd.get("company") ?? "").trim(),
+    contact: String(fd.get("contact") ?? "").trim(),
+    vin: String(fd.get("vin") ?? "").trim(),
+    brand: String(fd.get("brand") ?? "").trim(),
+    notes: String(fd.get("notes") ?? "").trim(),
+  };
+}
+
 export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
   const [urgent, setUrgent] = useState(false);
   const [photoName, setPhotoName] = useState("");
@@ -37,12 +59,19 @@ export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
   const [smsHint, setSmsHint] = useState(false);
   const [smsDraft, setSmsDraft] = useState("");
   const [smsCopied, setSmsCopied] = useState(false);
+  /**
+   * The lead could not be stored on the server. Instead of a dead end the form
+   * keeps every field and offers WhatsApp/email with the same text, so the
+   * inquiry still reaches the sales phone.
+   */
+  const [fallbackBody, setFallbackBody] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const t = useTranslations("quote");
   const locale = useLocale();
   const { items } = useQuoteList();
   const mergedTypes = useRef(false);
+  const fallback = fallbackBody !== "";
 
   useEffect(() => {
     if (mergedTypes.current || items.length === 0) return;
@@ -53,6 +82,15 @@ export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
     });
   }, [items]);
 
+  // Keep the fallback text in step with any edit the buyer makes after a failed
+  // submit: the WhatsApp/email links must carry what is on screen now.
+  useEffect(() => {
+    if (!fallback) return;
+    setFallbackBody(composeBody(readValues(formRef.current), selected));
+    // composeBody is stable for one render pass; only the inputs can change it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected, urgent]);
+
   function toggleType(id: InquiryTypeId) {
     setTypeError(false);
     setSelected((current) =>
@@ -60,19 +98,9 @@ export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
     );
   }
 
-  function buildBody(form: HTMLFormElement) {
-    if (selected.length === 0) {
-      setTypeError(true);
-      return null;
-    }
-    const fd = new FormData(form);
-    const company = String(fd.get("company") ?? "").trim();
-    const contact = String(fd.get("contact") ?? "").trim();
-    const vin = String(fd.get("vin") ?? "").trim();
-    const brand = String(fd.get("brand") ?? "").trim();
-    const notes = String(fd.get("notes") ?? "").trim();
+  function composeBody(values: FormValues, types: InquiryTypeId[]) {
     const isZh = locale === "zh";
-    const typeLabels = selected.map((id) => t(`type_${id}`)).join(isZh ? "、" : ", ");
+    const typeLabels = types.map((id) => t(`type_${id}`)).join(isZh ? "、" : ", ");
 
     const parts =
       items.length > 0
@@ -87,15 +115,30 @@ export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
       `${isZh ? "种类" : "Type"}: ${typeLabels}`,
       urgent ? (isZh ? "紧急 / 停机" : "URGENT / Machine down") : "",
       ...parts,
-      company ? `${isZh ? "公司" : "Company"}: ${company}` : "",
-      `${isZh ? "联系电话" : "Phone"}: ${contact}`,
-      vin ? `VIN: ${vin}` : "",
-      brand && brand !== t("selectBrand") ? `${isZh ? "品牌" : "Brand"}: ${brand}` : "",
+      values.company ? `${isZh ? "公司" : "Company"}: ${values.company}` : "",
+      `${isZh ? "联系电话" : "Phone"}: ${values.contact}`,
+      values.vin ? `VIN: ${values.vin}` : "",
+      values.brand && values.brand !== t("selectBrand")
+        ? `${isZh ? "品牌" : "Brand"}: ${values.brand}`
+        : "",
       photoName ? `${isZh ? "已选照片" : "Photo"}: ${photoName}` : "",
-      notes ? `${isZh ? "需求" : "Need"}: ${notes}` : "",
+      values.notes ? `${isZh ? "需求" : "Need"}: ${values.notes}` : "",
     ]
       .filter(Boolean)
       .join("\n");
+  }
+
+  function buildBody(form: HTMLFormElement) {
+    if (selected.length === 0) {
+      setTypeError(true);
+      return null;
+    }
+    return composeBody(readValues(form), selected);
+  }
+
+  function refreshFallback() {
+    if (!fallback) return;
+    setFallbackBody(composeBody(readValues(formRef.current), selected));
   }
 
   function buildPayload(form: HTMLFormElement) {
@@ -118,20 +161,22 @@ export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
   /**
    * Record the inquiry on the server before WhatsApp opens. The WhatsApp
    * hand-off stays the primary path, but a blocked popup or a buyer without
-   * WhatsApp no longer loses the lead. Returns the reference or "".
+   * WhatsApp no longer loses the lead.
    */
-  async function saveInquiry(form: HTMLFormElement) {
+  async function saveInquiry(form: HTMLFormElement): Promise<{ stored: boolean; reference: string }> {
     try {
       const response = await fetch("/api/inquiry", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(buildPayload(form)),
       });
-      if (!response.ok) return "";
+      if (!response.ok) return { stored: false, reference: "" };
       const data = (await response.json()) as { ok?: boolean; reference?: string };
-      return data.ok ? (data.reference ?? "") : "";
+      return data.ok
+        ? { stored: true, reference: data.reference ?? "" }
+        : { stored: false, reference: "" };
     } catch {
-      return "";
+      return { stored: false, reference: "" };
     }
   }
 
@@ -143,14 +188,24 @@ export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
     setSaving(true);
     const saved = await saveInquiry(form);
     setSaving(false);
-    setReference(saved);
     track("generate_lead", {
       inquiry_types: selected.join(","),
       urgent,
       parts: items.length,
     });
+    // Open WhatsApp in every case: it is the sales channel, not a fallback for
+    // the server write. The card below is what survives a blocked popup.
     window.open(inquiryWhatsAppHref(body), "_blank", "noopener,noreferrer");
-    setSent(true);
+    setReference(saved.reference);
+    if (saved.stored) {
+      setFallbackBody("");
+      setSent(true);
+      return;
+    }
+    // Not stored: show the hand-off instead of claiming the inquiry went through.
+    // The buyer's input stays in the form, untouched.
+    setSent(false);
+    setFallbackBody(body);
   }
 
   async function copySms(body: string) {
@@ -181,7 +236,42 @@ export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
   }
 
   return (
-    <form ref={formRef} className="space-y-6" onSubmit={onSubmit}>
+    <form
+      ref={formRef}
+      className="space-y-6"
+      onSubmit={onSubmit}
+      onChange={refreshFallback}
+    >
+      {fallback ? (
+        <div className="rounded-xl border-2 border-error bg-error-container p-5 shadow-sm sm:p-6">
+          <h3 className="mb-2 flex items-center gap-2 text-headline-md text-on-error-container">
+            <MaterialIcon name="cloud_off" filled className="shrink-0" />
+            <span className="min-w-0 break-words">{t("fallbackTitle")}</span>
+          </h3>
+          <p className="mb-4 text-body-sm text-on-error-container">{t("fallbackBody")}</p>
+          <div className="flex flex-col gap-3">
+            <a
+              href={inquiryWhatsAppHref(fallbackBody)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-4 text-center text-headline-md text-white shadow-md hover:brightness-110"
+            >
+              <WhatsAppIcon className="h-6 w-6 shrink-0" />
+              <span className="min-w-0 break-words">{t("fallbackWhatsApp")}</span>
+            </a>
+            <a
+              href={`mailto:${siteConfig.email}?subject=${encodeURIComponent(
+                t("fallbackMailSubject"),
+              )}&body=${encodeURIComponent(fallbackBody)}`}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-outline-variant bg-surface px-4 py-3 text-center text-technical-data text-on-surface hover:border-primary"
+            >
+              <MaterialIcon name="mail" className="shrink-0 text-primary" />
+              <span className="min-w-0 break-words">{t("fallbackEmail")}</span>
+            </a>
+          </div>
+        </div>
+      ) : null}
+
       {sent ? (
         <div className="rounded-xl border-2 border-primary bg-primary-fixed/10 p-6">
           <h3 className="mb-2 flex items-center gap-2 text-headline-md text-on-surface">
