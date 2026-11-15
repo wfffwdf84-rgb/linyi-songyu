@@ -7,7 +7,7 @@ import { countryLabel } from "@/lib/visitor-geo";
 export const dynamic = "force-dynamic";
 
 const HEADER = [
-  "时间",
+  "时间（北京时间）",
   "国家",
   "城市",
   "语言",

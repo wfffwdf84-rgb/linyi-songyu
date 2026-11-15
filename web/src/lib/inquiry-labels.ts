@@ -27,14 +27,19 @@ export function inquiryTypesLabelZh(ids: readonly string[]) {
 }
 
 /**
- * UTC wall clock, e.g. `2026-11-15 08:00 UTC`. Leads arrive from every market
- * at once, so the panel never guesses a local zone.
+ * Arrival wall clock in the operators' zone, e.g. `2026-11-15 14:32`. Stored
+ * timestamps are UTC, but a lead that landed at 06:00 UTC reached Linyi at
+ * 14:00, and that is the clock someone compares against when they decide
+ * whether a lead is still fresh. China has no daylight saving, so the fixed
+ * offset is exact rather than an approximation.
  */
+export const BUSINESS_UTC_OFFSET_MINUTES = 8 * 60;
+
 export function inquiryTimeLabel(iso: string) {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  const stamp = date.toISOString();
-  return `${stamp.slice(0, 10)} ${stamp.slice(11, 16)} UTC`;
+  const time = Date.parse(iso);
+  if (!Number.isFinite(time)) return iso;
+  const stamp = new Date(time + BUSINESS_UTC_OFFSET_MINUTES * 60_000).toISOString();
+  return `${stamp.slice(0, 10)} ${stamp.slice(11, 16)}`;
 }
 
 /** `2026-11` -> `2026年11月`. */

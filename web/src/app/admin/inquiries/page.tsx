@@ -6,7 +6,7 @@ import { getAdminSession, requireRole } from "@/lib/admin-auth";
 import { inquiryTimeLabel, inquiryTypesLabelZh } from "@/lib/inquiry-labels";
 import { inquiriesReadAt, inquiryStorageConfigured, listInquiries } from "@/lib/inquiry-store";
 import { phoneCountry } from "@/lib/phone-country";
-import { countryFlag, countryLabel, localTime } from "@/lib/visitor-geo";
+import { businessTime, countryFlag, countryLabel, localTime } from "@/lib/visitor-geo";
 
 export const dynamic = "force-dynamic";
 
@@ -78,6 +78,9 @@ export default async function AdminInquiriesPage() {
             const ipCountry = inquiry.ipCountry ?? "";
             const numberCountry = phoneCountry(inquiry.contact);
             const placedAt = localTime(inquiry.receivedAt, inquiry.ipTimezone ?? "");
+            // The operators' own clock, so a lead from another zone can be placed
+            // against the working day without doing the arithmetic in your head.
+            const beijingAt = businessTime(inquiry.receivedAt);
             return (
               <li
                 key={inquiry.id}
@@ -148,6 +151,11 @@ export default async function AdminInquiriesPage() {
                     {placedAt ? (
                       <span>
                         当地时间 <span className="text-on-surface">{placedAt}</span>
+                      </span>
+                    ) : null}
+                    {beijingAt ? (
+                      <span>
+                        北京时间 <span className="text-on-surface">{beijingAt}</span>
                       </span>
                     ) : null}
                   </div>

@@ -57,3 +57,20 @@ export function localTime(iso: string, timezone: string): string {
     return "";
   }
 }
+
+/** The operators' time zone, so every wall clock can be compared with their own. */
+export const BUSINESS_TIMEZONE = "Asia/Shanghai";
+
+/** Wall-clock time in the operators' zone when the lead was sent. */
+export function businessTime(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat("zh-CN", {
+      timeZone: BUSINESS_TIMEZONE,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(new Date(iso));
+  } catch {
+    return "";
+  }
+}
