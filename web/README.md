@@ -22,10 +22,29 @@ npx vercel deploy --prod --archive=tgz --yes --scope gcjx
 | `NEXT_PUBLIC_SITE_URL` | Canonical origin used by metadata, JSON-LD and the sitemap |
 | `NEXT_PUBLIC_WHATSAPP` | WhatsApp deep link |
 | `NEXT_PUBLIC_FACEBOOK_URL` / `NEXT_PUBLIC_TIKTOK_URL` / `NEXT_PUBLIC_INSTAGRAM_URL` / `NEXT_PUBLIC_YOUTUBE_URL` | Social links |
-| `BLOB_READ_WRITE_TOKEN` | Vercel Blob: factory videos and captured inquiries |
+| `SUPABASE_URL` | Supabase project URL. Storage: the `songyu_documents` table for JSON documents, the public `songyu-media` bucket for photos and factory videos |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-only key for the two above. Empty means "storage not configured": seed catalogue, 503 for inquiries, 503 for admin login |
 | `FACTORY_VIDEO_PASSWORD` | Password for the factory uploader **and** the inquiry desk. Also the fallback encryption key for inquiries |
 | `NEXT_PUBLIC_GA_ID` | GA4 measurement ID. While empty the site loads no analytics script and sets no analytics cookie |
 | `INQUIRY_ENCRYPTION_KEY` | Optional. Set it to keep stored inquiries readable if the factory password is ever rotated |
+
+## Storage (Supabase)
+
+The site no longer writes to Vercel Blob. Both halves of what it used to hold live
+in Supabase now:
+
+- **Documents** — the `songyu_documents` table. The key is the old Blob
+  pathname (`admin/users.json`, `content/products.json`,
+  `inquiry-state/read.json`, `inquiries/<ISO>-<uuid>.json`), the body is the same
+  ciphertext as before, base64-encoded. AES-256-GCM and the HKDF key derivation
+  are unchanged, so the existing secrets keep working.
+- **Media** — the public `songyu-media` bucket: product photos at
+  `products/<slug>-<rand>.<ext>`, factory videos at `factory-videos/<uuid>.<ext>`.
+
+Before the first deploy, run `web/supabase/schema.sql` in the Supabase SQL
+Editor. It creates the table, the bucket and the indexes, and it is idempotent.
+`/api/health` returns `{ok:true}` after one trivial query; `vercel.json` schedules
+it daily so the free plan does not pause an idle project.
 
 ## Operations panel
 
@@ -38,13 +57,13 @@ public catalogue and is disallowed in `robots.txt`.
 - **Roles.** `owner` manages everything including accounts; `editor` also
   handles products, copy and banners (later phases) plus inquiries; `sales`
   only sees inquiries, statistics and the CSV export.
-- **Accounts are encrypted at rest.** The Blob store is public, so the account
-  document is AES-256-GCM encrypted with a key derived from
-  `ADMIN_SESSION_SECRET`. Set that variable to a long random value; do not rely
-  on the factory password fallback.
+- **Accounts are encrypted at rest.** The database row is reachable with the
+  project's service key, so the account document is AES-256-GCM encrypted with a
+  key derived from `ADMIN_SESSION_SECRET`. Set that variable to a long random
+  value; do not rely on the factory password fallback.
 - **Rotating `ADMIN_SESSION_SECRET` makes the existing accounts unreadable.** To
-  recover, delete `admin/users.json` and the `admin/users/` snapshots, then sign
-  in again with the bootstrap password; every account has to be recreated.
+  recover, delete the `admin/users.json` row, then sign in again with the
+  bootstrap password; every account has to be recreated.
 - **Sessions** last 12 hours, are HttpOnly, and re-check the account on every
   request, so disabling a user or changing a role takes effect immediately.
 - **No online payments.** Payment stays off-site: terms are agreed on the quote
@@ -82,10 +101,11 @@ blocked popup or a buyer without WhatsApp does not lose the lead.
 Open `https://songyuheavyparts.com/zh/inquiry-desk` and sign in with
 `FACTORY_VIDEO_PASSWORD`. The page is `noindex` and disallowed in `robots.txt`.
 
-Leads are AES-256-GCM encrypted before they reach Blob. The Blob store is
-public, so without the key an object URL reveals nothing. Set
-`INQUIRY_ENCRYPTION_KEY` to decouple the key from the factory password —
-rotating the factory password otherwise makes older inquiries unreadable.
+Leads are AES-256-GCM encrypted before they reach Supabase. The table is only
+reachable with the service role key, and the ciphertext is useless without the
+key either way. Set `INQUIRY_ENCRYPTION_KEY` to decouple the key from the factory
+password — rotating the factory password otherwise makes older inquiries
+unreadable.
 
 ### Product images
 

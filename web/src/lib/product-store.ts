@@ -1,7 +1,6 @@
 import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from "node:crypto";
 import { unstable_cache } from "next/cache";
-import { put } from "@vercel/blob";
-import { readBlobDocument } from "@/lib/blob-read";
+import { isSupabaseMediaHost, readDocument, storageConfigured, writeDocument } from "@/lib/supabase";
 import type { Product, ProductSpec } from "@/lib/data/products";
 
 /**
@@ -9,10 +8,10 @@ import type { Product, ProductSpec } from "@/lib/data/products";
  * seed stays in code exactly as it was imported, so a restore is "delete the
  * override" rather than a data rebuild.
  *
- * This fixed pathname is the only copy: it is read with one GET (see
- * lib/blob-read.ts) and overwritten in place. Snapshot copies were removed with
- * the list() call that used to find the newest one - list() is an Advanced
- * Operation, and the store was suspended for exceeding that quota.
+ * This fixed key is the only copy: it is read as one row of `songyu_documents`
+ * and overwritten in place. Snapshot copies were removed along with the list()
+ * call that used to find the newest one - list() is an Advanced Operation, and
+ * the Blob store was suspended for exceeding that quota.
  */
 export const PRODUCT_OVERRIDES_PATH = "content/products.json";
 
@@ -62,7 +61,7 @@ export type ProductOverride = {
   /** Delisted: the public loaders drop the product, the data stays. */
   hidden?: boolean;
   specs?: ProductSpec[];
-  /** The photo is editable too: an uploaded Blob URL or a /images/... path. */
+  /** The photo is editable too: an uploaded Supabase public URL or a /images/... path. */
   image?: string;
 };
 
@@ -134,7 +133,7 @@ function sessionSecret() {
 }
 
 export function productStorageConfigured() {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+  return storageConfigured();
 }
 
 export function productOverridesConfigured() {
@@ -150,17 +149,16 @@ function encryptionKey(): Buffer {
 }
 
 /**
- * The Blob store backing this project is public, so the overlay leaves the
- * server encrypted: iv | auth tag | ciphertext. Prices therefore never sit at a
- * readable URL, and the document is useless without the deployment secret.
+ * The overlay is ciphertext - iv | auth tag | ciphertext, base64-encoded into the
+ * text body of its row. Prices therefore never sit readable in a database dump,
+ * and the document is useless without the deployment secret.
  */
 function encode(document: OverrideDocument) {
   const key = encryptionKey();
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", key, iv);
   const body = Buffer.concat([cipher.update(JSON.stringify(document), "utf8"), cipher.final()]);
-  // A Buffer's ArrayBufferLike does not satisfy BlobPart, so copy into a plain view.
-  return new Blob([new Uint8Array(Buffer.concat([iv, cipher.getAuthTag(), body]))]);
+  return Buffer.concat([iv, cipher.getAuthTag(), body]).toString("base64");
 }
 
 /* ------------------------------------------------------- document parsing */
@@ -305,13 +303,13 @@ function decode(payload: Buffer): Overlay {
 
 /**
  * null only when no overlay document exists yet. Throws when the store is
- * suspended, unreachable or the document cannot be decrypted.
+ * unreachable or the document cannot be decrypted.
  */
 async function loadOverlay(): Promise<Overlay | null> {
   if (!productStorageConfigured()) return null;
-  const response = await readBlobDocument(PRODUCT_OVERRIDES_PATH);
-  if (!response) return null;
-  return decode(Buffer.from(await response.arrayBuffer()));
+  const body = await readDocument(PRODUCT_OVERRIDES_PATH);
+  if (body === null) return null;
+  return decode(Buffer.from(body, "base64"));
 }
 
 async function writeOverrideDocument(overlay: Overlay) {
@@ -324,13 +322,7 @@ async function writeOverrideDocument(overlay: Overlay) {
     newProducts: overlay.newProducts,
     deletedProducts: overlay.deletedProducts,
   };
-  await put(PRODUCT_OVERRIDES_PATH, encode(document), {
-    access: "public", // the object itself is ciphertext; the store is public
-    contentType: "application/octet-stream",
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    cacheControlMaxAge: 0,
-  });
+  await writeDocument(PRODUCT_OVERRIDES_PATH, encode(document));
 }
 
 /* -------------------------------------------------------------- public API */
@@ -342,17 +334,15 @@ export type OverlayReadStatus = "" | "not_configured" | "unreadable";
  * path revalidation expires it.
  *
  * A strictly request-scoped read does not survive a 4,225-page build: every
- * prerendered page would fetch the Blob document, which rate-limits long before
- * the build finishes, and every page would then quietly render seed data
- * (measured: the build hit "Too many requests" from Blob). The data cache is the
- * right home for this document - it is one small object shared by the whole
- * catalogue - and every save calls revalidateTag(PRODUCT_OVERRIDES_TAG), so an
- * edit is never missed: the matching revalidatePath() calls regenerate the pages
- * and the tag expires this entry. A failed read is cached as well, so one outage
- * does not turn into one retry per page.
+ * prerendered page would issue its own query for the overlay document, and one
+ * shared row is read thousands of times per build. The data cache is the right
+ * home for this document - it is one small row shared by the whole catalogue -
+ * and every save calls revalidateTag(PRODUCT_OVERRIDES_TAG), so an edit is never
+ * missed: the matching revalidatePath() calls regenerate the pages and the tag
+ * expires this entry. A failed read is cached as well, so one outage does not
+ * turn into one retry per page.
  *
- * Each cache miss costs exactly one GET of the fixed document and no list()
- * call, so the read no longer consumes an Advanced Operation.
+ * Each cache miss costs exactly one row read, never a prefix scan of the table.
  */
 const loadOverlayCached = unstable_cache(
   async (): Promise<{ overlay: Overlay; status: OverlayReadStatus }> => {
@@ -641,9 +631,9 @@ function priceValue(value: unknown): ProductPrice | null | undefined {
 }
 
 /**
- * An image reference: an uploaded Blob URL, or a path inside the site. The
- * allowed HTTPS hosts mirror `images.remotePatterns` in next.config.ts, so a
- * saved image can always be rendered by <Image>.
+ * An image reference: an uploaded Supabase public URL, or a path inside the
+ * site. The allowed HTTPS hosts mirror `images.remotePatterns` in next.config.ts,
+ * so a saved image can always be rendered by <Image>.
  */
 function imageValue(value: unknown): string | undefined {
   if (value === undefined || value === null) return undefined;
@@ -664,10 +654,7 @@ function imageValue(value: unknown): string | undefined {
   }
   if (url.protocol !== "https:") throw new ProductStoreError("invalid_image");
   const host = url.hostname.toLowerCase();
-  const allowed =
-    host === "lh3.googleusercontent.com" ||
-    host.endsWith(".public.blob.vercel-storage.com") ||
-    host.endsWith(".blob.vercel-storage.com");
+  const allowed = host === "lh3.googleusercontent.com" || isSupabaseMediaHost(host);
   if (!allowed) throw new ProductStoreError("invalid_image");
   return cleaned;
 }

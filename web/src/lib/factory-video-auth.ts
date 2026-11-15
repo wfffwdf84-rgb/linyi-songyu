@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { FACTORY_VIDEO_COOKIE } from "@/lib/factory-videos";
+import { isSupabaseMediaHost } from "@/lib/supabase";
 
 const SESSION_TTL_SEC = 60 * 60 * 24 * 30;
 const TITLE_MAX = 80;
@@ -72,11 +73,9 @@ export function isAllowedFactoryVideoUrl(url: string) {
   try {
     const parsed = new URL(url);
     if (parsed.protocol !== "https:") return false;
-    const host = parsed.hostname.toLowerCase();
-    return (
-      host.endsWith(".public.blob.vercel-storage.com") ||
-      host.endsWith(".blob.vercel-storage.com")
-    );
+    // Clips live in the public songyu-media bucket, so the only host that is
+    // accepted is this Supabase project (or a pasted link from another one).
+    return isSupabaseMediaHost(parsed.hostname);
   } catch {
     return false;
   }

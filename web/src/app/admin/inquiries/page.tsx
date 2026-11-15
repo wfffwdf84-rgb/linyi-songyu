@@ -64,7 +64,7 @@ export default async function AdminInquiriesPage() {
 
       {!configured ? (
         <p className="rounded-xl border border-error bg-error-container p-6 text-body-md text-on-error-container">
-          服务器未配置 BLOB_READ_WRITE_TOKEN，无法读取询盘。
+          服务器未配置 SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY，无法读取询盘。
         </p>
       ) : inquiries.length === 0 ? (
         <div className="rounded-xl border border-outline-variant bg-surface-container-low p-6">

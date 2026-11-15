@@ -105,7 +105,7 @@ export default async function AdminProductsPage({ searchParams }: Props) {
 
       {overlayStatus === "not_configured" ? (
         <p className="rounded-xl border border-error bg-error-container p-4 text-body-md text-on-error-container">
-          服务器未配置 BLOB_READ_WRITE_TOKEN 或 ADMIN_SESSION_SECRET，覆盖层无法读取与保存。
+          服务器未配置 SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY 或 ADMIN_SESSION_SECRET，覆盖层无法读取与保存。
           前台此时显示的是种子数据。
         </p>
       ) : null}

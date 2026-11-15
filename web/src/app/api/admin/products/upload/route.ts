@@ -1,14 +1,11 @@
 import { randomBytes } from "node:crypto";
-import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { editorOnly } from "@/lib/admin-guard";
 import { productStorageConfigured } from "@/lib/product-store";
+import { uploadMedia } from "@/lib/supabase";
 
 /** 5 MB of actual image bytes. Enforced after reading, never on the header. */
 const MAX_BYTES = 5 * 1024 * 1024;
-
-/** Objects are immutable (random suffix), so they can be cached for a year. */
-const CACHE_CONTROL_MAX_AGE = 60 * 60 * 24 * 365;
 
 type ImageKind = "jpg" | "png" | "webp";
 
@@ -101,19 +98,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "unsupported_type" }, { status: 415 });
   }
 
-  const pathname = `uploads/products/${slugFrom(form.get("slug"))}-${randomBytes(4).toString(
-    "hex",
-  )}.${kind}`;
+  // The random suffix makes the object immutable, which is what the one-year
+  // cache control handed to Supabase rests on.
+  const pathname = `products/${slugFrom(form.get("slug"))}-${randomBytes(4).toString("hex")}.${kind}`;
 
   try {
-    const blob = await put(pathname, Buffer.from(bytes), {
-      access: "public",
-      contentType: CONTENT_TYPES[kind],
-      addRandomSuffix: false,
-      cacheControlMaxAge: CACHE_CONTROL_MAX_AGE,
-    });
+    const uploaded = await uploadMedia(pathname, bytes, CONTENT_TYPES[kind]);
     return NextResponse.json(
-      { ok: true, url: blob.url, pathname: blob.pathname, bytes: bytes.byteLength },
+      { ok: true, url: uploaded.url, pathname: uploaded.path, bytes: bytes.byteLength },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {

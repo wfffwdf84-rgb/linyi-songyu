@@ -59,7 +59,9 @@ export async function POST(request: Request) {
     : [];
 
   if (!inquiryStorageConfigured()) {
-    return NextResponse.json({ ok: false, error: "unconfigured" }, { status: 503 });
+    // Missing credentials mean the same thing to the visitor as an outage: the
+    // lead cannot be stored, so the form offers the WhatsApp hand-off.
+    return NextResponse.json({ ok: false, error: "storage_unavailable" }, { status: 503 });
   }
 
   try {

@@ -64,7 +64,7 @@ const EN: DeskText = {
   emptyTitle: "No inquiries yet",
   emptyBody:
     "Every submission on the contact page is stored here from now on, including the ones that never reach WhatsApp.",
-  missingStorage: "BLOB_READ_WRITE_TOKEN is not set on this deployment, so inquiries cannot be stored.",
+  missingStorage: "SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are not set on this deployment, so inquiries cannot be stored.",
   unknown: "?",
 };
 
@@ -96,7 +96,7 @@ const ZH: DeskText = {
   localTimeLabel: "当地时间",
   emptyTitle: "还没有收到询盘",
   emptyBody: "从现在起，联系页上的每一次提交都会存在这里，包括没能发到 WhatsApp 的那些。",
-  missingStorage: "服务器未配置 BLOB_READ_WRITE_TOKEN，无法存储询盘。",
+  missingStorage: "服务器未配置 SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY，无法存储询盘。",
   unknown: "未知",
 };
 

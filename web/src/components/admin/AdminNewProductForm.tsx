@@ -275,7 +275,7 @@ export function AdminNewProductForm({
           图片
         </h2>
         <p className="mb-4 text-body-sm text-on-surface-variant">
-          上传的图片存在 Vercel Blob，前台用 next/image 直接渲染。也可以填已有的站内路径。
+          上传的图片存在 Supabase 存储桶，前台用 next/image 直接渲染。也可以填已有的站内路径。
         </p>
         <AdminImageField value={image} onChange={setImage} slug={slug} disabled={busy} />
       </section>

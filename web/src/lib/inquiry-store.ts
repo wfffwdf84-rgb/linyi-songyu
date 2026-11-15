@@ -1,14 +1,15 @@
 import { createCipheriv, createDecipheriv, hkdfSync, randomBytes, randomUUID } from "node:crypto";
 import {
-  BlobError,
-  BlobServiceNotAvailable,
-  BlobServiceRateLimited,
-  BlobStoreNotFoundError,
-  BlobStoreSuspendedError,
-  list,
-  put,
-} from "@vercel/blob";
+  deleteDocument,
+  listDocumentKeys,
+  readDocument,
+  readDocuments,
+  storageConfigured,
+  storageUnavailable,
+  writeDocument,
+} from "@/lib/supabase";
 
+/** Keys under this prefix are the leads themselves; see inquiryPath(). */
 const PREFIX = "inquiries/";
 
 export type InquiryItem = {
@@ -41,26 +42,17 @@ export type StoredInquiry = {
 };
 
 export function inquiryStorageConfigured() {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+  return storageConfigured();
 }
 
 /**
- * True when the write failed because the Blob store itself is unavailable -
- * suspended, missing, rate-limited or down - rather than because the request
- * was bad. The API turns this into `storage_unavailable`, which the form uses
- * to offer the WhatsApp/email hand-off instead of a dead end.
+ * True when the write failed because the document store itself is unavailable -
+ * missing credentials, unreachable, rate-limited or down - rather than because
+ * the request was bad. The API turns this into `storage_unavailable`, which the
+ * form uses to offer the WhatsApp/email hand-off instead of a dead end.
  */
 export function inquiryStorageUnavailable(error: unknown): boolean {
-  if (error instanceof BlobStoreSuspendedError) return true;
-  if (error instanceof BlobStoreNotFoundError) return true;
-  if (error instanceof BlobServiceNotAvailable) return true;
-  if (error instanceof BlobServiceRateLimited) return true;
-  if (error instanceof BlobError && /suspend|quota|unavailable/i.test(error.message)) return true;
-  // `fetch` throws a TypeError when the store cannot be reached at all.
-  if (error instanceof TypeError) return true;
-  // A read/write that ran out of time is also "the store did not answer".
-  if (error instanceof DOMException && error.name === "TimeoutError") return true;
-  return false;
+  return storageUnavailable(error);
 }
 
 function encryptionKey(): Buffer | null {
@@ -73,36 +65,33 @@ function encryptionKey(): Buffer | null {
 }
 
 /**
- * The Blob store backing this project is public, so a lead leaves the server
- * encrypted: iv | auth tag | ciphertext. Without the key from the environment
- * the object is unreadable, which keeps customer phone numbers safe even if a
- * blob URL leaks.
+ * A lead leaves the server encrypted: iv | auth tag | ciphertext. Without the
+ * key from the environment the body is unreadable, which keeps customer phone
+ * numbers safe even if the database row leaks. The encrypted bytes are stored
+ * base64-encoded because the document body is a text column.
  */
-function encrypt(value: unknown): Buffer {
+function encrypt(value: unknown): string {
   const key = encryptionKey();
   if (!key) throw new Error("inquiry encryption is not configured");
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", key, iv);
   const body = Buffer.concat([cipher.update(JSON.stringify(value), "utf8"), cipher.final()]);
-  return Buffer.concat([iv, cipher.getAuthTag(), body]);
+  return Buffer.concat([iv, cipher.getAuthTag(), body]).toString("base64");
 }
 
-function decrypt(payload: Buffer): StoredInquiry {
+function decrypt(body: string): StoredInquiry {
   const key = encryptionKey();
   if (!key) throw new Error("inquiry encryption is not configured");
+  const payload = Buffer.from(body, "base64");
   const decipher = createDecipheriv("aes-256-gcm", key, payload.subarray(0, 12));
   decipher.setAuthTag(payload.subarray(12, 28));
   const json = Buffer.concat([decipher.update(payload.subarray(28)), decipher.final()]).toString("utf8");
   return JSON.parse(json) as StoredInquiry;
 }
 
+/** The document key of one lead. Unchanged from the Blob pathname it replaces. */
 export function inquiryPath(receivedAt: string, id: string) {
   return `${PREFIX}${receivedAt.replace(/[:.]/g, "-")}-${id}.json`;
-}
-
-function encode(record: StoredInquiry) {
-  // A Buffer's ArrayBufferLike does not satisfy BlobPart, so copy into a plain view.
-  return new Blob([new Uint8Array(encrypt(record))]);
 }
 
 export async function saveInquiry(
@@ -111,32 +100,38 @@ export async function saveInquiry(
   const id = randomUUID();
   const receivedAt = new Date().toISOString();
   const record: StoredInquiry = { id, receivedAt, ...input };
-  await put(inquiryPath(receivedAt, id), encode(record), {
-    access: "public", // the object itself is ciphertext; the store is public
-    contentType: "application/octet-stream",
-    addRandomSuffix: false,
-  });
+  await writeDocument(inquiryPath(receivedAt, id), encrypt(record));
   return { id, receivedAt, record };
 }
 
 /** Overwrites a stored lead in place, used to attach its Chinese rendering. */
 export async function rewriteInquiry(record: StoredInquiry) {
-  await put(inquiryPath(record.receivedAt, record.id), encode(record), {
-    access: "public",
-    contentType: "application/octet-stream",
-    addRandomSuffix: false,
-    allowOverwrite: true,
-  });
+  await writeDocument(inquiryPath(record.receivedAt, record.id), encrypt(record));
 }
 
+/** Removes one lead. The key embeds receivedAt, so both fields are required. */
+export async function removeInquiry(receivedAt: string, id: string) {
+  await deleteDocument(inquiryPath(receivedAt, id));
+}
+
+/**
+ * Every lead, newest first.
+ *
+ * One query lists the keys and then bodies are fetched in batches: the inbox is
+ * read on every panel visit, so it must not turn into one request per lead. A
+ * body that is unreadable (written under a rotated key, or half written) is
+ * skipped rather than failing the list.
+ */
 export async function listInquiries(): Promise<StoredInquiry[]> {
-  const { blobs } = await list({ prefix: PREFIX });
+  const keys = await listDocumentKeys(PREFIX);
+  if (keys.length === 0) return [];
+  const bodies = await readDocuments(keys);
   const records: StoredInquiry[] = [];
-  for (const blob of blobs) {
+  for (const key of keys) {
+    const body = bodies.get(key);
+    if (!body) continue;
     try {
-      const response = await fetch(blob.url, { cache: "no-store" });
-      if (!response.ok) continue;
-      records.push(decrypt(Buffer.from(await response.arrayBuffer())));
+      records.push(decrypt(body));
     } catch {
       // written under a different key, or a partial write: skip rather than fail
     }
@@ -147,18 +142,15 @@ export async function listInquiries(): Promise<StoredInquiry[]> {
 /**
  * Watermark of the newest inquiry the operator has already looked at, kept
  * outside the inquiries/ prefix so listing leads never trips over it. It holds
- * only a timestamp, so it is stored unencrypted.
+ * only a timestamp, so it is stored unencrypted as plain JSON.
  */
 const READ_STATE_PATH = "inquiry-state/read.json";
 
 export async function inquiriesReadAt(): Promise<string> {
   try {
-    const { blobs } = await list({ prefix: READ_STATE_PATH, limit: 1 });
-    const found = blobs.find((blob) => blob.pathname === READ_STATE_PATH);
-    if (!found) return "";
-    const response = await fetch(found.url, { cache: "no-store" });
-    if (!response.ok) return "";
-    const data = (await response.json()) as { lastReadAt?: unknown };
+    const body = await readDocument(READ_STATE_PATH);
+    if (!body) return "";
+    const data = JSON.parse(body) as { lastReadAt?: unknown };
     return typeof data.lastReadAt === "string" ? data.lastReadAt : "";
   } catch {
     return "";
@@ -166,12 +158,5 @@ export async function inquiriesReadAt(): Promise<string> {
 }
 
 export async function markInquiriesRead(upTo: string) {
-  await put(READ_STATE_PATH, JSON.stringify({ lastReadAt: upTo }), {
-    access: "public",
-    contentType: "application/json",
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    // Blob caches for a month by default, which would serve a stale watermark.
-    cacheControlMaxAge: 0,
-  });
+  await writeDocument(READ_STATE_PATH, JSON.stringify({ lastReadAt: upTo }));
 }

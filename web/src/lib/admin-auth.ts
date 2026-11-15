@@ -9,18 +9,17 @@ import {
   timingSafeEqual,
 } from "node:crypto";
 import { cookies } from "next/headers";
-import { put } from "@vercel/blob";
-import { readBlobDocument } from "@/lib/blob-read";
+import { readDocument, storageConfigured, writeDocument } from "@/lib/supabase";
 
 /** Separate from the factory session, so signing in to one does not open the other. */
 export const ADMIN_COOKIE = "songyu_admin";
 
 /**
  * One encrypted document holds every operator account. This fixed pathname is
- * the only copy and the only read: see lib/blob-read.ts for why the document is
- * fetched with a cache-busting GET instead of list(). Snapshots were removed
- * because list() is an Advanced Operation and the store was suspended for
- * exceeding that quota.
+ * both the only copy and the only read: it is one row of `songyu_documents`,
+ * read and replaced in place. Snapshots were removed when the store's list()
+ * traffic exhausted the Vercel Blob quota, and the move to Supabase keeps that
+ * rule: one key, one row, no copies.
  */
 export const ADMIN_USERS_PATH = "admin/users.json";
 
@@ -110,7 +109,7 @@ function bootstrapPassword() {
 }
 
 export function adminStorageConfigured() {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+  return storageConfigured();
 }
 
 export function adminAuthConfigured() {
@@ -124,17 +123,16 @@ function encryptionKey(): Buffer {
 }
 
 /**
- * The Blob store backing this project is public, so the account document leaves
- * the server encrypted: iv | auth tag | ciphertext. Only the deployment secret
- * can read it, which keeps password hashes and salts off a public URL.
+ * The account document is ciphertext: iv | auth tag | ciphertext, base64-encoded
+ * into the text body of its row. Only the deployment secret can read it, which
+ * keeps password hashes and salts out of any database export.
  */
 function encode(users: AdminUser[]) {
   const key = encryptionKey();
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", key, iv);
   const body = Buffer.concat([cipher.update(JSON.stringify({ users }), "utf8"), cipher.final()]);
-  // A Buffer's ArrayBufferLike does not satisfy BlobPart, so copy into a plain view.
-  return new Blob([new Uint8Array(Buffer.concat([iv, cipher.getAuthTag(), body]))]);
+  return Buffer.concat([iv, cipher.getAuthTag(), body]).toString("base64");
 }
 
 function decode(payload: Buffer): AdminUser[] {
@@ -157,25 +155,17 @@ function decode(payload: Buffer): AdminUser[] {
  * decrypted throws instead: silently falling back to bootstrap would overwrite
  * every account after a secret rotation.
  *
- * The read is one GET of the fixed pathname with a fresh `?v=` (see
- * lib/blob-read.ts). That is what makes a just-created account visible at once,
- * without list(): the public CDN would otherwise serve the previous version for
- * at least a minute.
+ * One row read, straight after the write, so a just-created account is visible
+ * at once: there is no CDN in front of the table to serve a stale copy.
  */
 async function readUsers(): Promise<AdminUser[] | null> {
-  const response = await readBlobDocument(ADMIN_USERS_PATH);
-  if (!response) return null;
-  return decode(Buffer.from(await response.arrayBuffer()));
+  const body = await readDocument(ADMIN_USERS_PATH);
+  if (body === null) return null;
+  return decode(Buffer.from(body, "base64"));
 }
 
 async function writeUsers(users: AdminUser[]) {
-  await put(ADMIN_USERS_PATH, encode(users), {
-    access: "public", // the object itself is ciphertext; the store is public
-    contentType: "application/octet-stream",
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    cacheControlMaxAge: 0,
-  });
+  await writeDocument(ADMIN_USERS_PATH, encode(users));
 }
 
 /**
@@ -274,7 +264,7 @@ export function clearSessionCookie(): string {
   return `${ADMIN_COOKIE}=; ${cookieSecurity(0)}`;
 }
 
-/** Verifies the signature and the expiry, without touching Blob. */
+/** Verifies the signature and the expiry, without touching the database. */
 export function readAdminSession(token: string | undefined | null): AdminSession | null {
   if (!token || !adminAuthConfigured()) return null;
   const [payload, signature] = token.split(".");
@@ -295,7 +285,7 @@ export function readAdminSession(token: string | undefined | null): AdminSession
 }
 
 /**
- * Reads the session cookie and then re-checks the account in Blob, so a
+ * Reads the session cookie and then re-checks the account in the database, so a
  * disabled account or a changed role takes effect at once instead of when the
  * cookie happens to expire. Fails closed when the account list is unreadable.
  */
@@ -324,7 +314,7 @@ export function requireRole(
 /* -------------------------------------------------------------- accounts */
 
 /**
- * Fail-open list for the account page: a suspended store shows "no accounts"
+ * Fail-open list for the account page: an unavailable store shows "no accounts"
  * rather than a 500. Contrast mutateUsers, which refuses to write over a
  * document it could not read.
  */

@@ -72,7 +72,7 @@ export function AdminImageField({
         <input
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="https://…blob.vercel-storage.com/uploads/products/… 或 /images/products/…"
+          placeholder="https://<项目>.supabase.co/storage/v1/object/public/songyu-media/products/… 或 /images/products/…"
           maxLength={500}
           spellCheck={false}
           disabled={disabled}

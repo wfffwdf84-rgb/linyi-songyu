@@ -4,7 +4,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import ffmpegPath from "ffmpeg-static";
-import { del, put } from "@vercel/blob";
+import { mediaPathFromUrl, removeMedia, uploadMedia } from "@/lib/supabase";
 import { FACTORY_VIDEO_TRANSCODE_MAX_BYTES, mp4LooksLikeHevc } from "@/lib/factory-videos";
 
 function ffmpegBin() {
@@ -95,14 +95,17 @@ export async function ensureBrowserPlayableUrl(url: string) {
     throw new Error("hevc_too_large");
   }
   const converted = await transcodeBufferToH264(buf);
-  const uploaded = await put(`factory/h264-${Date.now()}.mp4`, converted, {
-    access: "public",
-    addRandomSuffix: true,
-    contentType: "video/mp4",
-  });
-  if (url.includes("blob.vercel-storage.com")) {
+  // The pathname carries a timestamp, so the converted clip never collides with
+  // an earlier one and does not need an overwrite.
+  const uploaded = await uploadMedia(
+    `factory-videos/h264-${Date.now()}.mp4`,
+    converted,
+    "video/mp4",
+  );
+  const sourcePath = mediaPathFromUrl(url);
+  if (sourcePath) {
     try {
-      await del(url);
+      await removeMedia([sourcePath]);
     } catch {
       // keep the playable copy even if the original cannot be removed
     }

@@ -25,9 +25,9 @@ const securityHeaders = [
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com data:",
-      "img-src 'self' data: blob: https://lh3.googleusercontent.com https://*.public.blob.vercel-storage.com https://*.blob.vercel-storage.com",
-      "media-src 'self' blob: https://*.public.blob.vercel-storage.com https://*.blob.vercel-storage.com",
-      "connect-src 'self' https://vercel.com https://*.blob.vercel-storage.com https://*.public.blob.vercel-storage.com https://blob.vercel-storage.com",
+      "img-src 'self' data: blob: https://lh3.googleusercontent.com https://*.supabase.co https://*.supabase.in",
+      "media-src 'self' blob: https://*.supabase.co https://*.supabase.in",
+      "connect-src 'self' https://vercel.com https://*.supabase.co https://*.supabase.in",
       "frame-src 'self' https://www.openstreetmap.org https://uri.amap.com https://*.amap.com",
       "upgrade-insecure-requests",
     ].join("; "),
@@ -49,18 +49,19 @@ const nextConfig: NextConfig = {
         hostname: "lh3.googleusercontent.com",
         pathname: "/**",
       },
-      // Product photos uploaded from the admin panel land in Vercel Blob, at
-      // https://<store-id>.public.blob.vercel-storage.com/uploads/products/...
-      // Without these entries <Image> refuses the URL. The CSP below already
-      // lists the same hosts for img-src, so the two stay in step.
+      // Product photos uploaded from the admin panel land in the public Supabase
+      // bucket, at
+      // https://<project-ref>.supabase.co/storage/v1/object/public/songyu-media/products/...
+      // Without these entries <Image> refuses the URL. The CSP above lists the
+      // same hosts for img-src, so the two stay in step.
       {
         protocol: "https",
-        hostname: "*.public.blob.vercel-storage.com",
+        hostname: "*.supabase.co",
         pathname: "/**",
       },
       {
         protocol: "https",
-        hostname: "*.blob.vercel-storage.com",
+        hostname: "*.supabase.in",
         pathname: "/**",
       },
     ],

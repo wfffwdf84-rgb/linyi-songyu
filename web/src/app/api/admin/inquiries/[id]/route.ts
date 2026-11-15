@@ -1,7 +1,6 @@
-import { del } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { getAdminSession, requireRole } from "@/lib/admin-auth";
-import { inquiryPath, listInquiries } from "@/lib/inquiry-store";
+import { listInquiries, removeInquiry } from "@/lib/inquiry-store";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -19,11 +18,11 @@ export async function DELETE(_request: Request, { params }: Props) {
   if (!id) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
 
   try {
-    // The record is needed for the blob's pathname, which embeds receivedAt:
-    // the API exposes no delete-by-id, so resolve it from the decrypted list.
+    // The record is needed for its document key, which embeds receivedAt: the
+    // API exposes no delete-by-id, so resolve it from the decrypted list.
     const record = (await listInquiries()).find((inquiry) => inquiry.id === id);
     if (!record) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
-    await del(inquiryPath(record.receivedAt, record.id));
+    await removeInquiry(record.receivedAt, record.id);
     return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("inquiry delete failed", error);

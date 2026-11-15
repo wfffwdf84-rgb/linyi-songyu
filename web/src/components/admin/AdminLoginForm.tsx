@@ -6,7 +6,7 @@ import { MaterialIcon } from "@/components/ui/MaterialIcon";
 const ERRORS: Record<string, string> = {
   invalid_credentials: "用户名或密码错误。",
   too_many_attempts: "尝试次数过多，请 10 分钟后再试。",
-  not_configured: "服务器未配置运营后台（需要 ADMIN_SESSION_SECRET 与 BLOB_READ_WRITE_TOKEN）。",
+  not_configured: "服务器未配置运营后台（需要 ADMIN_SESSION_SECRET 与 SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY）。",
   unavailable: "后台暂时不可用，请稍后再试。",
 };
 

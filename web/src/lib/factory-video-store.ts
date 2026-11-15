@@ -1,7 +1,15 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { del, get, list, put } from "@vercel/blob";
+import {
+  listMedia,
+  mediaPathFromUrl,
+  mediaPublicUrl,
+  readDocument,
+  removeMedia,
+  storageConfigured,
+  writeDocument,
+} from "@/lib/supabase";
 import {
   FACTORY_MANIFEST_PATH,
   LOCAL_VIDEO_DIR,
@@ -9,12 +17,30 @@ import {
   type FactoryVideo,
 } from "@/lib/factory-videos";
 
-function hasBlobToken() {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+/**
+ * Factory videos are split in two, the way the Blob store used to hold them:
+ * the clips are objects in the public `songyu-media` bucket under
+ * `factory-videos/`, and the titles/order live in one JSON document at the same
+ * key as before (`factory/videos.json`). A clip found in the bucket but missing
+ * from the manifest is still listed, so a lost write never hides a video.
+ */
+
+/** Objects under this prefix are clips; the manifest document stays separate. */
+const VIDEO_PREFIX = "factory-videos/";
+
+function hasRemoteStorage() {
+  return storageConfigured();
 }
 
 export function factoryVideoStorageReady() {
-  return hasBlobToken() || process.env.VERCEL !== "1";
+  // Outside Vercel the clips can always live on disk, which is what makes
+  // `npm run dev` work without any credentials.
+  return hasRemoteStorage() || process.env.VERCEL !== "1";
+}
+
+/** True when the upload may go straight to Supabase instead of the local disk. */
+export function factoryVideoObjectStorageReady() {
+  return hasRemoteStorage();
 }
 
 function localManifestFile() {
@@ -34,10 +60,6 @@ function parseVideos(raw: string): FactoryVideo[] {
   }
 }
 
-function isFactoryVideoPath(pathname: string) {
-  return pathname.startsWith("factory/") && /\.(mp4|webm|m4v|mov)$/i.test(pathname);
-}
-
 async function readLocalManifest(): Promise<FactoryVideo[]> {
   try {
     return parseVideos(await readFile(localManifestFile(), "utf8"));
@@ -52,22 +74,28 @@ async function writeLocalManifest(videos: FactoryVideo[]) {
   await writeFile(file, `${JSON.stringify({ videos }, null, 2)}\n`, "utf8");
 }
 
-async function readBlobManifest(): Promise<FactoryVideo[]> {
+async function readRemoteManifest(): Promise<FactoryVideo[]> {
   try {
-    const result = await get(FACTORY_MANIFEST_PATH, { access: "public", useCache: false });
-    if (!result || result.statusCode !== 200) return [];
-    return parseVideos(await new Response(result.stream).text());
+    const body = await readDocument(FACTORY_MANIFEST_PATH);
+    return body ? parseVideos(body) : [];
   } catch {
     return [];
   }
 }
 
 async function listFactoryVideoFiles() {
-  const { blobs } = await list({ prefix: "factory/", limit: 200 });
-  return blobs.filter((item) => item.pathname !== FACTORY_MANIFEST_PATH && isFactoryVideoPath(item.pathname));
+  const objects = await listMedia(VIDEO_PREFIX, 200);
+  return objects.map((object) => ({
+    pathname: object.path,
+    url: mediaPublicUrl(object.path),
+    uploadedAt: new Date(object.createdAt),
+  }));
 }
 
-function mergeManifestWithFiles(manifest: FactoryVideo[], files: Awaited<ReturnType<typeof listFactoryVideoFiles>>) {
+function mergeManifestWithFiles(
+  manifest: FactoryVideo[],
+  files: Awaited<ReturnType<typeof listFactoryVideoFiles>>,
+) {
   const byKey = new Map<string, FactoryVideo>();
   for (const video of manifest) {
     byKey.set(factoryVideoBlobKey(video.url), video);
@@ -85,21 +113,22 @@ function mergeManifestWithFiles(manifest: FactoryVideo[], files: Awaited<ReturnT
   return [...byKey.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
-async function writeBlobManifest(videos: FactoryVideo[]) {
-  await put(FACTORY_MANIFEST_PATH, JSON.stringify({ videos }), {
-    access: "public",
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: "application/json",
-    cacheControlMaxAge: 60,
-  });
+async function writeRemoteManifest(videos: FactoryVideo[]) {
+  await writeDocument(FACTORY_MANIFEST_PATH, JSON.stringify({ videos }));
 }
 
 export async function listFactoryVideos(): Promise<FactoryVideo[]> {
-  if (hasBlobToken()) {
-    const manifest = await readBlobManifest();
-    if (manifest.length > 0) return manifest;
-    return mergeManifestWithFiles([], await listFactoryVideoFiles());
+  if (hasRemoteStorage()) {
+    try {
+      const manifest = await readRemoteManifest();
+      if (manifest.length > 0) return manifest;
+      return mergeManifestWithFiles([], await listFactoryVideoFiles());
+    } catch (error) {
+      // The homepage must render without clips rather than fail: a clip is an
+      // enhancement, and a storage outage should not take the page down.
+      console.error("factory videos could not be read", error);
+      return [];
+    }
   }
   return readLocalManifest();
 }
@@ -111,8 +140,8 @@ export async function getFactoryVideo(id: string) {
 }
 
 export async function saveFactoryVideos(videos: FactoryVideo[]) {
-  if (hasBlobToken()) {
-    await writeBlobManifest(videos);
+  if (hasRemoteStorage()) {
+    await writeRemoteManifest(videos);
     return;
   }
   await writeLocalManifest(videos);
@@ -170,11 +199,15 @@ export async function removeFactoryVideo(id: string) {
   const current = await listFactoryVideos();
   const target = current.find((item) => item.id === id);
   if (!target) return current;
-  if (hasBlobToken() && target.url.includes("blob.vercel-storage.com")) {
+  // Only objects in our own bucket are deleted; an externally hosted URL is
+  // dropped from the manifest and left where it is.
+  const objectPath = mediaPathFromUrl(target.url);
+  if (objectPath) {
     try {
-      await del(target.url);
-    } catch {
+      await removeMedia([objectPath]);
+    } catch (error) {
       // keep removing from the list even if the file is already gone
+      console.error("factory video file could not be removed", error);
     }
   }
   const next = current.filter((item) => item.id !== id);

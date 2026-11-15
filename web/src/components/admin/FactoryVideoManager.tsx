@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import { upload } from "@vercel/blob/client";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
 import {
   FACTORY_VIDEO_MAX_BYTES,
@@ -13,20 +12,43 @@ import {
   type FactoryVideo,
 } from "@/lib/factory-videos";
 
-function factoryUploadPath(file: File) {
-  const fromName = file.name.match(/\.(mp4|webm|m4v)$/i)?.[1];
-  const ext = fromName
-    ? fromName.toLowerCase()
-    : file.type === "video/webm"
-      ? "webm"
-      : "mp4";
-  return `factory/${Date.now()}-${Math.random().toString(16).slice(2)}.${ext}`;
+/**
+ * Sends the clip straight to Supabase Storage with the signed URL the server
+ * handed out. XHR is used instead of fetch because only XHR reports upload
+ * progress, and a 200 MB upload without a percentage feels broken.
+ */
+function putToSignedUrl(
+  signedUrl: string,
+  file: File,
+  contentType: string,
+  onProgress: (percentage: number) => void,
+) {
+  return new Promise<void>((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open("PUT", signedUrl);
+    request.setRequestHeader("x-upsert", "false");
+    request.setRequestHeader("Content-Type", contentType);
+    request.setRequestHeader("cache-control", "max-age=31536000");
+    request.upload.onprogress = (event) => {
+      if (event.lengthComputable && event.total > 0) {
+        onProgress((event.loaded / event.total) * 100);
+      }
+    };
+    request.onload = () => {
+      if (request.status >= 200 && request.status < 300) resolve();
+      else reject(new Error(`upload_${request.status}`));
+    };
+    request.onerror = () => reject(new Error("upload_network"));
+    request.ontimeout = () => reject(new Error("upload_timeout"));
+    request.send(file);
+  });
 }
 
 type Session = {
   configured: boolean;
   storage: boolean;
-  blob: boolean;
+  /** True when the browser may upload straight to Supabase Storage. */
+  direct: boolean;
   authed: boolean;
 };
 
@@ -135,25 +157,33 @@ export function FactoryVideoManager() {
     setProgress(0);
     setStatus(hevc ? "苹果视频正在转成电脑能看的格式，请不要关闭页面。" : "");
     const label = title.trim() || "厂区视频";
-    const pathname = factoryUploadPath(file);
     try {
-      if (session.blob) {
-        const blob = await upload(pathname, file, {
-          access: "public",
-          handleUploadUrl: "/api/factory-videos/upload",
-          multipart: true,
-          contentType: file.type || "video/mp4",
-          clientPayload: JSON.stringify({ title: label }),
-          onUploadProgress({ percentage }) {
-            setProgress(Math.round(percentage));
-          },
-        });
-        await fetch("/api/factory-videos/register", {
+      if (session.direct) {
+        const signRes = await fetch("/api/factory-videos/upload", {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: blob.url, title: label }),
+          body: JSON.stringify({ type: "sign", filename: file.name, contentType: file.type || "video/mp4" }),
         });
+        const sign = (await signRes.json().catch(() => null)) as
+          | { signedUrl?: string; path?: string; contentType?: string; error?: string }
+          | null;
+        if (!signRes.ok || !sign?.signedUrl || !sign.path) {
+          throw new Error(sign?.error || "sign");
+        }
+        await putToSignedUrl(
+          sign.signedUrl,
+          file,
+          sign.contentType || file.type || "video/mp4",
+          (percentage) => setProgress(percentage),
+        );
+        const completeRes = await fetch("/api/factory-videos/upload", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "complete", path: sign.path, title: label }),
+        });
+        if (!completeRes.ok) throw new Error("complete");
         await loadVideos();
         await repairVideos();
       } else {
@@ -169,12 +199,14 @@ export function FactoryVideoManager() {
       if (fileRef.current) fileRef.current.value = "";
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
-      if (/token|unauthorized|401/i.test(message)) {
+      if (/unauthorized|401/i.test(message)) {
         setError("登录已过期，请点退出后重新输入口令。");
       } else if (/mp4|mov|limit/i.test(message)) {
         setError("请用 MP4（H.264），不要用苹果 MOV。已满 8 条需先删除。");
+      } else if (/storage|503/i.test(message)) {
+        setError("线上存储未配置，暂时无法上传。");
       } else {
-        setError(session.blob ? "上传失败。请用 MP4，传完前不要关闭或刷新页面。" : "本地保存失败。");
+        setError(session.direct ? "上传失败。请用 MP4，传完前不要关闭或刷新页面。" : "本地保存失败。");
       }
     } finally {
       setBusy(false);
@@ -227,7 +259,7 @@ export function FactoryVideoManager() {
     return (
       <div className="rounded border border-outline-variant bg-surface p-6">
         <p className="text-body-md text-on-surface">后台还没有设置上传口令，无法从电脑传到线上站。</p>
-        <p className="mt-2 text-body-sm text-on-surface-variant">需要环境变量 FACTORY_VIDEO_PASSWORD 与 BLOB_READ_WRITE_TOKEN。</p>
+        <p className="mt-2 text-body-sm text-on-surface-variant">需要环境变量 FACTORY_VIDEO_PASSWORD 与 SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY。</p>
       </div>
     );
   }
@@ -263,10 +295,10 @@ export function FactoryVideoManager() {
     <div className="space-y-8">
       <div className="flex items-center justify-between gap-4">
         <p className="text-body-sm text-on-surface-variant">
-          {session.blob
+          {session.direct
             ? "上传后立即出现在首页厂区视频。"
             : session.storage
-              ? "当前是本地预览。线上站需要开通 Vercel Blob。"
+              ? "当前是本地预览。线上站需要配置 SUPABASE_URL 与 SUPABASE_SERVICE_ROLE_KEY。"
               : "线上存储未开通，无法把视频传到独立站。"}
         </p>
         <button type="button" onClick={() => void onLogout()} className="text-technical-data text-primary hover:underline">
@@ -298,7 +330,7 @@ export function FactoryVideoManager() {
         />
         <button
           type="button"
-          disabled={busy || !(session.blob || session.storage)}
+          disabled={busy || !(session.direct || session.storage)}
           onClick={() => fileRef.current?.click()}
           className="inline-flex items-center gap-2 rounded bg-primary px-6 py-3 font-semibold text-on-primary hover:bg-primary-container disabled:opacity-60"
         >
