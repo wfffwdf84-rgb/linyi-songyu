@@ -8,6 +8,10 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: [
         "/api/",
+        "/api/admin",
+        "/api/admin/",
+        "/admin",
+        "/admin/",
         "/manage-factory-videos",
         "/*/manage-factory-videos",
         "/manage-factory-videos/",

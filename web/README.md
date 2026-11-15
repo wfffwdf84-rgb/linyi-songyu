@@ -27,6 +27,30 @@ npx vercel deploy --prod --archive=tgz --yes --scope gcjx
 | `NEXT_PUBLIC_GA_ID` | GA4 measurement ID. While empty the site loads no analytics script and sets no analytics cookie |
 | `INQUIRY_ENCRYPTION_KEY` | Optional. Set it to keep stored inquiries readable if the factory password is ever rotated |
 
+## Operations panel
+
+`/admin` is a separate, non-localized tool for staff. It is not part of the
+public catalogue and is disallowed in `robots.txt`.
+
+- **Sign in.** Username `admin`, password `ADMIN_PASSWORD` (falls back to
+  `FACTORY_VIDEO_PASSWORD`). The first successful sign-in creates the owner
+  account, so nobody has to seed one by hand.
+- **Roles.** `owner` manages everything including accounts; `editor` also
+  handles products, copy and banners (later phases) plus inquiries; `sales`
+  only sees inquiries, statistics and the CSV export.
+- **Accounts are encrypted at rest.** The Blob store is public, so the account
+  document is AES-256-GCM encrypted with a key derived from
+  `ADMIN_SESSION_SECRET`. Set that variable to a long random value; do not rely
+  on the factory password fallback.
+- **Rotating `ADMIN_SESSION_SECRET` makes the existing accounts unreadable.** To
+  recover, delete `admin/users.json` and the `admin/users/` snapshots, then sign
+  in again with the bootstrap password; every account has to be recreated.
+- **Sessions** last 12 hours, are HttpOnly, and re-check the account on every
+  request, so disabling a user or changing a role takes effect immediately.
+- **No online payments.** Payment stays off-site: terms are agreed on the quote
+  and settled by bank transfer, which is why the panel records prices
+  internally and never renders them on the public site.
+
 ## Workflows
 
 ### Adding OEM cross-reference numbers
