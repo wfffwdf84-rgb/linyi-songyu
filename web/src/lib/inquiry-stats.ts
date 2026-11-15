@@ -12,7 +12,9 @@ export type InquiryStats = {
   total: number;
   /** Leads newer than the desk's read watermark. */
   unread: number;
-  /** Leads received in the current UTC month. */
+  /** Leads received today, counted in the operators' time zone. */
+  today: number;
+  /** Leads received in the current month, counted in the operators' time zone. */
   thisMonth: number;
   byCountry: InquiryCount[];
   byType: InquiryCount[];
@@ -23,6 +25,26 @@ export type InquiryStats = {
 export const STATS_MONTHS = 6;
 export const STATS_COUNTRY_LIMIT = 10;
 export const UNKNOWN_COUNTRY = "??";
+
+/**
+ * The desk is read from China, so "today" has to start at midnight there. Every
+ * stored timestamp is UTC, and counting on the UTC day would put a lead placed
+ * at 07:00 Beijing time into yesterday. China has no daylight saving, so a fixed
+ * offset is exact rather than an approximation.
+ */
+export const BUSINESS_OFFSET_MINUTES = 8 * 60;
+
+/** Calendar day of a UTC timestamp in the operators' time zone, `YYYY-MM-DD`. */
+export function inquiryDayKey(value: string | Date) {
+  const time = typeof value === "string" ? Date.parse(value) : value.getTime();
+  if (!Number.isFinite(time)) return "";
+  return new Date(time + BUSINESS_OFFSET_MINUTES * 60_000).toISOString().slice(0, 10);
+}
+
+/** Month key of a UTC timestamp in the operators' time zone, `YYYY-MM`. */
+export function inquiryBusinessMonthKey(value: string | Date) {
+  return inquiryDayKey(value).slice(0, 7);
+}
 
 /** `2026-11-15T08:00:00.000Z` -> `2026-11`. Stored timestamps are always UTC. */
 export function inquiryMonthKey(iso: string) {
@@ -67,19 +89,22 @@ export function computeInquiryStats(
   now: Date = new Date(),
 ): InquiryStats {
   const months = monthKeys(now);
-  const currentMonth = months[months.length - 1];
+  const currentMonth = inquiryBusinessMonthKey(now);
+  const todayKey = inquiryDayKey(now);
   const countries = new Map<string, number>();
   const types = new Map<string, number>();
   const perMonth = new Map<string, number>(months.map((month) => [month, 0]));
   let unread = 0;
+  let today = 0;
   let thisMonth = 0;
 
   for (const inquiry of inquiries) {
     const receivedAt = inquiry.receivedAt ?? "";
     if (!readAt || receivedAt > readAt) unread += 1;
 
+    if (inquiryDayKey(receivedAt) === todayKey) today += 1;
+    if (inquiryBusinessMonthKey(receivedAt) === currentMonth) thisMonth += 1;
     const month = inquiryMonthKey(receivedAt);
-    if (month === currentMonth) thisMonth += 1;
     if (perMonth.has(month)) perMonth.set(month, (perMonth.get(month) ?? 0) + 1);
 
     const country = inquiryCountry(inquiry);
@@ -95,6 +120,7 @@ export function computeInquiryStats(
   return {
     total: inquiries.length,
     unread,
+    today,
     thisMonth,
     byCountry: topCounts(countries, STATS_COUNTRY_LIMIT),
     byType: topCounts(types, STATS_COUNTRY_LIMIT),

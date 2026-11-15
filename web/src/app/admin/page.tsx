@@ -7,6 +7,7 @@ import { inquiryTimeLabel, inquiryTypeLabelZh, inquiryTypesLabelZh, monthLabelZh
 import { UNKNOWN_COUNTRY, computeInquiryStats } from "@/lib/inquiry-stats";
 import { inquiriesReadAt, inquiryStorageConfigured, listInquiries } from "@/lib/inquiry-store";
 import { countryFlag, countryLabel } from "@/lib/visitor-geo";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -20,14 +21,38 @@ function countryText(code: string) {
   return `${countryFlag(code)} ${countryLabel(code, "zh")}`.trim();
 }
 
-function StatCard({ label, value, hint, icon }: { label: string; value: number; hint: string; icon: string }) {
+function StatCard({
+  label,
+  value,
+  hint,
+  icon,
+  compact,
+}: {
+  label: string;
+  value: number;
+  hint: string;
+  icon: string;
+  compact?: boolean;
+}) {
   return (
-    <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-5">
+    <div
+      className={cn(
+        "rounded-xl border border-outline-variant bg-surface-container-lowest",
+        compact ? "p-4" : "p-5",
+      )}
+    >
       <p className="flex items-center gap-2 text-technical-data text-on-surface-variant">
         <MaterialIcon name={icon} className="text-primary" />
         {label}
       </p>
-      <p className="mt-2 text-headline-lg text-on-surface">{value}</p>
+      <p
+        className={cn(
+          "mt-2 text-on-surface",
+          compact ? "text-headline-md" : "text-headline-lg",
+        )}
+      >
+        {value}
+      </p>
       <p className="mt-1 text-body-sm text-on-surface-variant">{hint}</p>
     </div>
   );
@@ -88,10 +113,27 @@ export default async function AdminOverviewPage() {
         </p>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="询盘总数" value={stats.total} hint="全部收到的询盘" icon="inbox" />
-        <StatCard label="未读" value={stats.unread} hint="需要跟进的询盘" icon="mark_email_unread" />
-        <StatCard label="本月新增" value={stats.thisMonth} hint="按 UTC 月份统计" icon="trending_up" />
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard
+          label="今日询盘"
+          value={stats.today}
+          hint="按北京时间今天收到"
+          icon="today"
+        />
+        <StatCard
+          label="未读"
+          value={stats.unread}
+          hint="需要跟进的询盘"
+          icon="mark_email_unread"
+        />
+        <StatCard label="询盘总数" value={stats.total} hint="全部收到的询盘" icon="inbox" compact />
+        <StatCard
+          label="本月新增"
+          value={stats.thisMonth}
+          hint="按北京时间统计"
+          icon="trending_up"
+          compact
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
