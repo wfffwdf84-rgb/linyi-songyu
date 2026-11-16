@@ -14,7 +14,9 @@ import {
 } from "@/lib/locales";
 import { QuoteListProvider } from "@/components/quote/QuoteListProvider";
 import { ScrollMemory } from "@/components/layout/ScrollMemory";
+import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
+import { readAnnouncements, pickActiveAnnouncement } from "@/lib/announcements";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
@@ -83,6 +85,13 @@ export default async function LocaleLayout({ children, params }: Props) {
   const dir = rtlLocales.has(locale) ? "rtl" : "ltr";
   const fontClass = localeFontClass(locale);
 
+  // Fail-open: storage that is down, unconfigured or holding a corrupt document
+  // reads as "no announcement", and this line is the only place the banner is
+  // chosen. The bar sits above the sticky site header, so it scrolls away while
+  // the header stays pinned - which is why it is rendered here and not inside
+  // SiteShell.
+  const announcement = pickActiveAnnouncement(await readAnnouncements(), new Date());
+
   return (
     <html
       lang={htmlLang}
@@ -102,6 +111,8 @@ export default async function LocaleLayout({ children, params }: Props) {
         />
       </head>
       <body className="min-h-full bg-background text-on-background antialiased">
+        {/* Above SiteHeader, which the pages render inside SiteShell. */}
+        {announcement ? <AnnouncementBar announcement={announcement} locale={locale} /> : null}
         <GoogleAnalytics locale={locale} />
         <NextIntlClientProvider messages={messages}>
           <QuoteListProvider>
