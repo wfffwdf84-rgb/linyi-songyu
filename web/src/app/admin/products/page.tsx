@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
+import { AdminPageJump } from "@/components/admin/AdminPageJump";
 import { getAdminSession, requireRole } from "@/lib/admin-auth";
 import { getAdminProducts, getOverlayStatus, type AdminProduct } from "@/lib/catalog";
 import { getCategory } from "@/lib/data/categories";
@@ -97,11 +98,16 @@ export default async function AdminProductsPage({ searchParams }: Props) {
         </div>
       </div>
 
-      <p className="rounded-xl border border-outline-variant bg-surface-container-low p-4 text-body-sm text-on-surface-variant">
-        代码里的产品仍然只读，修改作为「覆盖层」保存在 Blob，前台渲染时叠加；新产品则是完整记录，
-        同样存在覆盖层里。价格仅内部可见，前台任何页面都不会显示，新增产品也一样。
-        新增产品排在最前面，删除只对新增产品开放（代码里的产品可以「恢复原始内容」）。
-      </p>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-outline-variant bg-surface-container-low p-4 text-body-sm text-on-surface-variant">
+        <span>价格仅内部可见，前台任何页面都不会显示。</span>
+        <details className="ms-auto">
+          <summary className="cursor-pointer select-none text-primary">说明</summary>
+          <p className="mt-2 max-w-2xl">
+            代码里的产品仍然只读，修改作为「覆盖层」保存在数据库，前台渲染时叠加；新产品则是完整记录。
+            新增产品排在最前面，删除只对新增产品开放（代码里的产品可以「恢复原始内容」）。
+          </p>
+        </details>
+      </div>
 
       {overlayStatus === "not_configured" ? (
         <p className="rounded-xl border border-error bg-error-container p-4 text-body-md text-on-error-container">
@@ -111,7 +117,7 @@ export default async function AdminProductsPage({ searchParams }: Props) {
       ) : null}
       {overlayStatus === "unreadable" ? (
         <p className="rounded-xl border border-error bg-error-container p-4 text-body-md text-on-error-container">
-          覆盖层无法读取（Blob 不可用，或加密密钥已更换），当前显示的是种子数据，请勿保存，
+          覆盖层无法读取（数据库不可用，或加密密钥已更换），当前显示的是种子数据，请勿保存，
           否则会覆盖已有修改。
         </p>
       ) : null}
@@ -267,6 +273,7 @@ export default async function AdminProductsPage({ searchParams }: Props) {
               下一页
             </Link>
           ) : null}
+          <AdminPageJump current={current} pageCount={pageCount} query={q} />
         </nav>
       ) : null}
     </div>
