@@ -6,7 +6,8 @@ import { useState, type FormEvent } from "react";
 type Props = {
   current: number;
   pageCount: number;
-  query?: string;
+  /** Filters to keep while jumping, e.g. the search term and the category. */
+  params?: Record<string, string>;
 };
 
 /**
@@ -14,7 +15,7 @@ type Props = {
  * clicking is tedious, so this jumps straight there. Whatever is typed is
  * clamped into range instead of producing an empty page.
  */
-export function AdminPageJump({ current, pageCount, query }: Props) {
+export function AdminPageJump({ current, pageCount, params = {} }: Props) {
   const router = useRouter();
   const [value, setValue] = useState(String(current));
 
@@ -22,10 +23,9 @@ export function AdminPageJump({ current, pageCount, query }: Props) {
     event.preventDefault();
     const parsed = Number.parseInt(value, 10);
     const target = Math.min(Math.max(Number.isFinite(parsed) ? parsed : 1, 1), pageCount);
-    const params = new URLSearchParams();
-    if (query) params.set("q", query);
-    if (target > 1) params.set("page", String(target));
-    const suffix = params.toString();
+    const search = new URLSearchParams(params);
+    if (target > 1) search.set("page", String(target));
+    const suffix = search.toString();
     router.push(suffix ? `/admin/products?${suffix}` : "/admin/products");
   }
 

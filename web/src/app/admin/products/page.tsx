@@ -5,7 +5,7 @@ import { MaterialIcon } from "@/components/ui/MaterialIcon";
 import { AdminPageJump } from "@/components/admin/AdminPageJump";
 import { getAdminSession, requireRole } from "@/lib/admin-auth";
 import { getAdminProducts, getOverlayStatus, type AdminProduct } from "@/lib/catalog";
-import { getCategory } from "@/lib/data/categories";
+import { getCategory, categories } from "@/lib/data/categories";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 const PAGE_SIZE = 20;
 
 type Props = {
-  searchParams: Promise<{ q?: string | string[]; page?: string | string[] }>;
+  searchParams: Promise<{ q?: string | string[]; cat?: string | string[]; page?: string | string[] }>;
 };
 
 function firstOf(value: string | string[] | undefined) {
@@ -56,12 +56,16 @@ export default async function AdminProductsPage({ searchParams }: Props) {
 
   const query = await searchParams;
   const q = firstOf(query.q).trim();
+  const requestedCategory = firstOf(query.cat).trim();
+  const category = categories.some((item) => item.slug === requestedCategory) ? requestedCategory : "";
   const requestedPage = Number.parseInt(firstOf(query.page), 10);
   const page = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
 
   const overlayStatus = await getOverlayStatus();
   const all = await getAdminProducts();
-  const hits = all.filter((product) => matches(product, q.toLowerCase()));
+  const hits = all.filter(
+    (product) => matches(product, q.toLowerCase()) && (!category || product.categorySlug === category),
+  );
   const pageCount = Math.max(1, Math.ceil(hits.length / PAGE_SIZE));
   const current = Math.min(page, pageCount);
   const rows = hits.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
@@ -72,10 +76,25 @@ export default async function AdminProductsPage({ searchParams }: Props) {
   const pageHref = (target: number) => {
     const params = new URLSearchParams();
     if (q) params.set("q", q);
+    if (category) params.set("cat", category);
     if (target > 1) params.set("page", String(target));
     const suffix = params.toString();
     return suffix ? `/admin/products?${suffix}` : "/admin/products";
   };
+
+  /** Category chips carry the search term forward and reset to page one. */
+  const filterHref = (nextCategory: string) => {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (nextCategory) params.set("cat", nextCategory);
+    const suffix = params.toString();
+    return suffix ? `/admin/products?${suffix}` : "/admin/products";
+  };
+
+  const chip = (active: boolean) =>
+    active
+      ? "rounded-full bg-primary px-3 py-1 text-technical-data font-semibold text-on-primary"
+      : "rounded-full border border-outline-variant px-3 py-1 text-technical-data text-on-surface-variant hover:border-primary";
 
   return (
     <div className="space-y-5">
@@ -148,8 +167,24 @@ export default async function AdminProductsPage({ searchParams }: Props) {
         ) : null}
       </form>
 
+      <div className="flex flex-wrap items-center gap-2">
+        <Link href={filterHref("")} className={chip(!category)}>
+          全部分类 <span className="opacity-70">{all.length}</span>
+        </Link>
+        {categories.map((item) => {
+          const count = all.filter((product) => product.categorySlug === item.slug).length;
+          if (count === 0) return null;
+          return (
+            <Link key={item.slug} href={filterHref(item.slug)} className={chip(category === item.slug)}>
+              {item.name.zh} <span className="opacity-70">{count}</span>
+            </Link>
+          );
+        })}
+      </div>
+
       <p className="text-body-sm text-on-surface-variant">
-        {q ? `“${q}” 匹配 ${hits.length} 个产品` : `显示全部 ${hits.length} 个产品`}
+        {q ? `“${q}” 匹配 ${hits.length} 个产品` : `显示 ${hits.length} 个产品`}
+        {category ? `（${getCategory(category)?.name.zh ?? category}）` : ""}
         {pageCount > 1 ? ` · 第 ${current} / ${pageCount} 页` : ""}
       </p>
 
@@ -273,7 +308,11 @@ export default async function AdminProductsPage({ searchParams }: Props) {
               下一页
             </Link>
           ) : null}
-          <AdminPageJump current={current} pageCount={pageCount} query={q} />
+          <AdminPageJump
+            current={current}
+            pageCount={pageCount}
+            params={{ ...(q ? { q } : {}), ...(category ? { cat: category } : {}) }}
+          />
         </nav>
       ) : null}
     </div>
