@@ -10,7 +10,7 @@ import { loc } from "@/lib/locale";
 import { mapsOpenHref } from "@/lib/maps";
 import { tr } from "@/lib/translated";
 
-export function SiteFooter() {
+export function SiteFooter({ logo }: { logo: string }) {
   const t = useTranslations("footer");
   const tNav = useTranslations("nav");
   const tContact = useTranslations("contact");
@@ -25,7 +25,7 @@ export function SiteFooter() {
       <div className="mx-auto grid w-full max-w-container-max grid-cols-1 gap-10 px-margin-mobile py-12 md:grid-cols-12 md:px-margin-desktop">
         <div className="md:col-span-3">
           <div className="mb-4 flex items-center gap-2 text-headline-md text-primary-fixed">
-            <BrandLogo size="sm" />
+            <BrandLogo size="sm" src={logo} />
             {brand}
           </div>
           <p className="mb-2 text-body-sm text-white/90">{legalName}</p>

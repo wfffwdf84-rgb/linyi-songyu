@@ -2,14 +2,22 @@ import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
+import { readSiteImages } from "@/lib/site-images";
+import { siteImageFrom } from "@/lib/site-image-slots";
 
+/**
+ * The same six shots appear on the home page, the about page and the quality
+ * page, so there is one slot per frame rather than one per page: replacing the
+ * factory photo updates the three places at once, which is what an operator
+ * uploading a new plant photo expects.
+ */
 const factoryShots = [
-  { src: "/images/factory/factory-exterior.webp", key: "shot1" },
-  { src: "/images/factory/heat-treatment.webp", key: "shot2" },
-  { src: "/images/factory/env-equipment.webp", key: "shot3" },
-  { src: "/images/factory/production-line.webp", key: "shot4" },
-  { src: "/images/factory/cmm-inspection.webp", key: "shot5" },
-  { src: "/images/factory/workshop.webp", key: "shot6" },
+  { slot: "factory.exterior", key: "shot1" },
+  { slot: "factory.heatTreatment", key: "shot2" },
+  { slot: "factory.envEquipment", key: "shot3" },
+  { slot: "factory.productionLine", key: "shot4" },
+  { slot: "factory.cmmInspection", key: "shot5" },
+  { slot: "factory.workshop", key: "shot6" },
 ] as const;
 
 type FactoryGalleryProps = {
@@ -18,6 +26,7 @@ type FactoryGalleryProps = {
 
 export async function FactoryGallery({ showMoreLink = true }: FactoryGalleryProps) {
   const t = await getTranslations("home");
+  const images = await readSiteImages();
 
   return (
     <section className="bg-surface px-margin-mobile py-8 md:px-margin-desktop md:py-16">
@@ -52,7 +61,7 @@ export async function FactoryGallery({ showMoreLink = true }: FactoryGalleryProp
             >
               <div className="relative aspect-video w-full overflow-hidden bg-surface-container">
                 <Image
-                  src={shot.src}
+                  src={siteImageFrom(images, shot.slot)}
                   alt={t(shot.key)}
                   fill
                   quality={100}

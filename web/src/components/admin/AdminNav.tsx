@@ -21,6 +21,7 @@ const ITEMS: NavItem[] = [
   { href: "/admin/inquiries", label: "询盘", icon: "inbox" },
   { href: "/admin/products", label: "产品", icon: "widgets", content: true },
   { href: "/admin/copy", label: "文案", icon: "edit_note", content: true },
+  { href: "/admin/images", label: "图片", icon: "image", content: true },
   { href: "/admin/announcements", label: "公告", icon: "campaign", content: true },
   { href: "/admin/users", label: "账号", icon: "group", ownerOnly: true },
 ];

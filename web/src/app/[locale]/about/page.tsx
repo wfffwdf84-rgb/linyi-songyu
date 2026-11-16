@@ -10,6 +10,8 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { organizationSameAs, siteConfig } from "@/lib/site";
 import { routing } from "@/i18n/routing";
 import { localePath, pageAlternates } from "@/lib/locales";
+import { readSiteImages } from "@/lib/site-images";
+import { siteImageFrom } from "@/lib/site-image-slots";
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -35,6 +37,9 @@ export default async function AboutPage({ params }: Props) {
   const t = await getTranslations("about");
   const tNav = await getTranslations("nav");
   const legalName = locale === "zh" ? siteConfig.nameZh : siteConfig.name;
+  // The visible logo follows the replaceable slot; the JSON-LD below keeps
+  // siteConfig.logo, because structured data should not depend on a store read.
+  const images = await readSiteImages();
 
   return (
     <SiteShell>
@@ -68,7 +73,7 @@ export default async function AboutPage({ params }: Props) {
             <Breadcrumbs items={[{ href: "/", label: tNav("home") }, { label: t("title") }]} />
             <p className="mb-2 text-label-caps tracking-widest text-primary uppercase">{t("legalLabel")}</p>
             <div className="mb-4 flex flex-wrap items-center gap-4">
-              <BrandLogo size="lg" priority />
+              <BrandLogo size="lg" priority src={siteImageFrom(images, "site.logo")} />
               <h1 className="text-headline-lg-mobile text-on-surface md:text-headline-xl">{t("h1")}</h1>
             </div>
             <p className="mb-2 max-w-3xl text-body-lg font-medium text-on-surface">{legalName}</p>

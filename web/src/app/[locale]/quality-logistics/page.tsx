@@ -8,6 +8,8 @@ import { FactoryGallery } from "@/components/home/FactoryGallery";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
 import { WhatsAppIcon } from "@/components/ui/BrandIcons";
 import { pageAlternates } from "@/lib/locales";
+import { readSiteImages } from "@/lib/site-images";
+import { siteImageFrom } from "@/lib/site-image-slots";
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -28,6 +30,8 @@ export default async function QualityLogisticsPage({ params }: Props) {
   setRequestLocale(locale);
   const t = await getTranslations("quality");
   const tNav = await getTranslations("nav");
+  // Fail-open: on any storage problem this is the shipped photo set.
+  const images = await readSiteImages();
 
   const jumps = [
     { href: "#qc", label: t("jumpQc") },
@@ -89,7 +93,7 @@ export default async function QualityLogisticsPage({ params }: Props) {
             <figure>
               <div className="relative aspect-video w-full overflow-hidden rounded border border-outline-variant bg-surface-container">
                 <Image
-                  src="/images/factory/cmm-inspection.webp"
+                  src={siteImageFrom(images, "quality.inspectionPhoto")}
                   alt={t("photoCaption")}
                   fill
                   quality={100}
@@ -144,7 +148,7 @@ export default async function QualityLogisticsPage({ params }: Props) {
           <div className="mx-auto grid max-w-container-max grid-cols-1 items-center gap-12 px-margin-mobile md:grid-cols-2 md:px-margin-desktop">
             <div className="relative order-2 aspect-video overflow-hidden rounded border border-outline-variant bg-surface-container md:order-1">
               <Image
-                src="/images/factory/factory-exterior.webp"
+                src={siteImageFrom(images, "quality.hubPhoto")}
                 alt={t("hubTitle")}
                 fill
                 quality={100}

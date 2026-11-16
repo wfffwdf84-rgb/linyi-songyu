@@ -13,7 +13,7 @@ import { BrandLogo } from "@/components/ui/BrandLogo";
 import { siteConfig } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
-export function SiteHeader() {
+export function SiteHeader({ logo }: { logo: string }) {
   const pathname = usePathname();
   const locale = useLocale();
   const t = useTranslations("nav");
@@ -71,7 +71,7 @@ export function SiteHeader() {
       <div className="md:hidden">
         <div className="flex h-14 items-center gap-2 px-margin-mobile">
           <Link href="/" className="flex min-w-0 flex-1 items-center gap-2">
-            <BrandLogo size="sm" />
+            <BrandLogo size="sm" src={logo} />
             <span className="truncate text-base font-bold tracking-tight text-on-surface">
               {brand}
             </span>
@@ -86,7 +86,7 @@ export function SiteHeader() {
 
       <div className="relative mx-auto hidden h-[4.5rem] w-full max-w-container-max items-center gap-6 px-margin-desktop md:flex">
         <Link href="/" className="flex min-w-0 shrink-0 items-center gap-2.5">
-          <BrandLogo size="md" priority />
+          <BrandLogo size="md" priority src={logo} />
           <span className="truncate text-[22px] leading-none font-bold tracking-tight text-on-surface">
             {brand}
           </span>
