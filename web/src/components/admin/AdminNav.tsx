@@ -20,12 +20,10 @@ const ITEMS: NavItem[] = [
   { href: "/admin", label: "概览", icon: "dashboard" },
   { href: "/admin/inquiries", label: "询盘", icon: "inbox" },
   { href: "/admin/products", label: "产品", icon: "widgets", content: true },
+  { href: "/admin/copy", label: "文案", icon: "edit_note", content: true },
   { href: "/admin/announcements", label: "公告", icon: "campaign", content: true },
   { href: "/admin/users", label: "账号", icon: "group", ownerOnly: true },
 ];
-
-/** Sections the next phase will add; shown disabled so nobody hits a 404. */
-const COMING_SOON = [{ label: "文案", icon: "edit_note" }];
 
 function isActive(pathname: string, href: string) {
   if (href === "/admin") return pathname === "/admin";
@@ -58,26 +56,6 @@ export function AdminNav({ role }: { role: Role }) {
           </Link>
         );
       })}
-
-      {/* Still to come; sales never sees this section at all. */}
-      {role !== "sales" ? (
-        <div className="mt-2 hidden border-t border-outline-variant pt-3 md:block">
-          <p className="mb-1 px-4 text-label-caps text-on-surface-variant">内容</p>
-          {COMING_SOON.map((item) => (
-            <span
-              key={item.label}
-              aria-disabled="true"
-              className="flex cursor-not-allowed items-center gap-2 rounded-lg px-4 py-2 text-body-md text-on-surface-variant/50"
-            >
-              <MaterialIcon name={item.icon} className="text-[20px]" />
-              {item.label}
-              <span className="ms-auto rounded bg-surface-container px-1.5 py-0.5 text-label-caps text-on-surface-variant">
-                即将上线
-              </span>
-            </span>
-          ))}
-        </div>
-      ) : null}
     </nav>
   );
 }
