@@ -14,6 +14,12 @@
  * The stored document is sparse, like the copy overlay: a slot is absent when it
  * shows its shipped file. That is what makes "恢复默认" a delete instead of a
  * copy, and it keeps the file small as operators replace and revert images.
+ *
+ * Version 2 of the document also carries `settings` - currently the hero
+ * carousel's cadence and autoplay switch. They live in the same document as the
+ * hero images because one panel edits both, and a save of either must never drop
+ * the other. The reader accepts a version-1 document (no `settings` at all) and
+ * falls back to the shipped defaults; every write produces version 2.
  */
 
 export type SiteImageSlotKind = "single" | "carousel";
@@ -79,7 +85,7 @@ export const SITE_IMAGE_SLOTS: readonly SiteImageSlot[] = [
       "/images/hero-transmission-assembly.webp",
       "/images/hero-cast-housing.webp",
     ],
-    where: "首页最上方整屏背景（标题叠在图片上），桌面端每 3 秒自动切换",
+    where: "首页最上方整屏背景（标题叠在图片上），桌面端按「轮播设置」里的间隔自动切换",
     hint: "建议横图、至少 1920px 宽。数量少于 2 张时不再轮播，也不显示左右箭头。",
   },
   {
@@ -171,16 +177,59 @@ export const SITE_IMAGE_ITEMS_MAX = 8;
 /** One URL: long enough for a Supabase public URL, short enough to reject junk. */
 export const SITE_IMAGE_VALUE_MAX = 600;
 
+/* ------------------------------------------------------- hero carousel settings */
+
+/**
+ * The interval `HeroCarousel` shipped with before it became adjustable. It is the
+ * default for a version-1 document, for a document without `settings`, and for a
+ * stored value that fails validation - so a carousel always has a cadence.
+ */
+export const HERO_INTERVAL_DEFAULT_MS = 3000;
+
+/** The range the panel and the API accept. */
+export const HERO_INTERVAL_MIN_MS = 2000;
+export const HERO_INTERVAL_MAX_MS = 15000;
+
+/** The panel edits whole and half seconds; the API accepts any whole millisecond. */
+export const HERO_INTERVAL_STEP_MS = 500;
+
+/** Autoplay is on unless an operator turns it off. */
+export const HERO_AUTOPLAY_DEFAULT = true;
+
+/** Stored settings: sparse, so "back to the default" stays a delete. */
+export type SiteImageSettings = {
+  heroIntervalMs?: number;
+  heroAutoplay?: boolean;
+};
+
+/** Settings with every field resolved; what a component renders with. */
+export type HeroSettings = {
+  heroIntervalMs: number;
+  heroAutoplay: boolean;
+};
+
 /** Stored shape: one key per slot, a string for single slots, an array for carousels. */
 export type SiteImageOverrides = Record<string, string | string[]>;
 
 /** Effective values: defaults filled in for every slot without an override. */
 export type SiteImageMap = Record<string, string | string[]>;
 
+/**
+ * The stored document. Version 1 held `images` only; version 2 adds `settings`.
+ * Writing always produces version 2. Reading is by shape rather than by version,
+ * so a version-1 document keeps working and simply renders with the defaults.
+ */
 export type SiteImageDocument = {
-  version: 1;
+  version: 2;
   updatedAt: string;
   images: SiteImageOverrides;
+  settings?: SiteImageSettings;
+};
+
+/** What a read produces: the overrides plus whichever settings were valid. */
+export type ParsedSiteImageDocument = {
+  images: SiteImageOverrides;
+  settings: SiteImageSettings;
 };
 
 export class SiteImageError extends Error {
@@ -198,6 +247,8 @@ export const SITE_IMAGE_ERROR_STATUS: Record<string, number> = {
   invalid_body: 400,
   invalid_slot: 400,
   invalid_value: 400,
+  invalid_interval: 400,
+  invalid_autoplay: 400,
   too_many: 400,
   no_file: 400,
   too_large: 413,
@@ -284,20 +335,85 @@ export function normalizeSiteImageValue(
 }
 
 /**
- * The document body back to overrides, tolerantly: a corrupt row, an unknown
- * slot, a value of the wrong shape or a value equal to the shipped image are all
- * dropped. An unreadable decoration document must never take the site down.
+ * A whole number of milliseconds inside the accepted range, or `invalid_interval`.
+ * Booleans, numeric strings and fractional values are refused on purpose: the
+ * panel sends milliseconds, and `Number.isInteger` keeps the contract narrow.
  */
-export function parseSiteImageDocument(body: string): SiteImageOverrides {
+export function normalizeHeroIntervalMs(value: unknown): number {
+  if (typeof value !== "number" || !Number.isInteger(value)) {
+    throw new SiteImageError("invalid_interval", String(value));
+  }
+  if (value < HERO_INTERVAL_MIN_MS || value > HERO_INTERVAL_MAX_MS) {
+    throw new SiteImageError("invalid_interval", String(value));
+  }
+  return value;
+}
+
+/** A real boolean, or `invalid_autoplay`; `"false"` is not false. */
+export function normalizeHeroAutoplay(value: unknown): boolean {
+  if (typeof value !== "boolean") throw new SiteImageError("invalid_autoplay", String(value));
+  return value;
+}
+
+/**
+ * The `settings` object of a PATCH body, validated. Only the fields the operator
+ * sent are returned, so a request that flips autoplay keeps the stored interval.
+ * A body that names neither field is refused rather than silently doing nothing.
+ */
+export function normalizeSiteImageSettingsPatch(value: unknown): SiteImageSettings {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new SiteImageError("invalid_body", "settings");
+  }
+  const source = value as Record<string, unknown>;
+  const hasInterval = Object.prototype.hasOwnProperty.call(source, "heroIntervalMs");
+  const hasAutoplay = Object.prototype.hasOwnProperty.call(source, "heroAutoplay");
+  if (!hasInterval && !hasAutoplay) throw new SiteImageError("invalid_body", "settings");
+
+  const patch: SiteImageSettings = {};
+  if (hasInterval) patch.heroIntervalMs = normalizeHeroIntervalMs(source.heroIntervalMs);
+  if (hasAutoplay) patch.heroAutoplay = normalizeHeroAutoplay(source.heroAutoplay);
+  return patch;
+}
+
+/**
+ * The settings after writing a patch. A value equal to the default is deleted, so
+ * the document stays sparse and "回到默认" is a delete - the same rule the images
+ * follow. The input object is not mutated.
+ */
+export function planSiteImageSettingsWrite(
+  settings: SiteImageSettings,
+  patch: SiteImageSettings,
+): SiteImageSettings {
+  const next: SiteImageSettings = { ...settings, ...patch };
+  if (next.heroIntervalMs === HERO_INTERVAL_DEFAULT_MS) delete next.heroIntervalMs;
+  if (next.heroAutoplay === HERO_AUTOPLAY_DEFAULT) delete next.heroAutoplay;
+  return next;
+}
+
+/**
+ * The document body back to overrides and settings, tolerantly: a corrupt row, an
+ * unknown slot, a value of the wrong shape or a value equal to the shipped image
+ * are all dropped, and so is a setting that is not a valid value. An unreadable
+ * decoration document must never take the site down.
+ *
+ * `version` is deliberately not inspected: a version-1 document has no
+ * `settings`, which already means "the defaults", and a future shape that still
+ * carries `images` should keep rendering rather than vanish.
+ */
+export function parseSiteImageDocument(body: string): ParsedSiteImageDocument {
   let parsed: unknown;
   try {
     parsed = JSON.parse(body);
   } catch {
-    return {};
+    return { images: {}, settings: {} };
   }
-  if (typeof parsed !== "object" || parsed === null) return {};
-  const raw = (parsed as Record<string, unknown>).images;
-  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
+  if (typeof parsed !== "object" || parsed === null) return { images: {}, settings: {} };
+  const root = parsed as Record<string, unknown>;
+  const settings = parseSiteImageSettings(root.settings);
+  const raw = root.images;
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return { images: {}, settings };
+  }
 
   const overrides: SiteImageOverrides = {};
   for (const [slotId, value] of Object.entries(raw as Record<string, unknown>)) {
@@ -315,7 +431,36 @@ export function parseSiteImageDocument(body: string): SiteImageOverrides {
     if (sameList(asList, siteImageDefaults(slot))) continue;
     overrides[slotId] = normalized;
   }
-  return overrides;
+  return { images: overrides, settings };
+}
+
+/**
+ * Settings that survive validation, dropping any invalid field instead of the
+ * whole document: a typo in one number must not revert the hero images.
+ */
+function parseSiteImageSettings(raw: unknown): SiteImageSettings {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
+  const source = raw as Record<string, unknown>;
+  const settings: SiteImageSettings = {};
+  try {
+    if ("heroIntervalMs" in source) settings.heroIntervalMs = normalizeHeroIntervalMs(source.heroIntervalMs);
+  } catch {
+    // Keep the default interval.
+  }
+  try {
+    if ("heroAutoplay" in source) settings.heroAutoplay = normalizeHeroAutoplay(source.heroAutoplay);
+  } catch {
+    // Keep the default autoplay.
+  }
+  return settings;
+}
+
+/** The stored settings with the defaults filled in; what a component renders. */
+export function effectiveHeroSettings(settings: SiteImageSettings): HeroSettings {
+  return {
+    heroIntervalMs: settings.heroIntervalMs ?? HERO_INTERVAL_DEFAULT_MS,
+    heroAutoplay: settings.heroAutoplay ?? HERO_AUTOPLAY_DEFAULT,
+  };
 }
 
 /** Defaults with the stored overrides layered on; one entry per slot, always. */

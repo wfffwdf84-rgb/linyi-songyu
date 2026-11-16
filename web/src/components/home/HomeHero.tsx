@@ -3,7 +3,7 @@ import { Link } from "@/i18n/navigation";
 import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { WhatsAppIcon } from "@/components/ui/BrandIcons";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
-import { readSiteImages } from "@/lib/site-images";
+import { readSiteImageSettings, readSiteImages } from "@/lib/site-images";
 import { siteImageListFrom } from "@/lib/site-image-slots";
 
 /**
@@ -35,7 +35,10 @@ const NEUTRAL_POSITION = "object-[72%_center]";
 
 export async function HomeHero() {
   const t = await getTranslations("home");
-  const images = await readSiteImages();
+  // One cached read feeds both: the slides and the cadence come from the same
+  // document, and `HeroCarousel` is a client component, so they cross the
+  // boundary as props (the same way `SiteShell` hands the logo to the header).
+  const [images, settings] = await Promise.all([readSiteImages(), readSiteImageSettings()]);
 
   const slides = siteImageListFrom(images, "home.hero").map((src) => {
     const shipped = SHIPPED_SLIDES.find((slide) => slide.src === src);
@@ -51,6 +54,8 @@ export async function HomeHero() {
   return (
     <HeroCarousel
       slides={slides}
+      intervalMs={settings.heroIntervalMs}
+      autoplay={settings.heroAutoplay}
       prevLabel={t("heroPrev")}
       nextLabel={t("heroNext")}
     >

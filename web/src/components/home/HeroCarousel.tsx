@@ -3,9 +3,12 @@
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
+import {
+  HERO_INTERVAL_DEFAULT_MS,
+  HERO_INTERVAL_MAX_MS,
+  HERO_INTERVAL_MIN_MS,
+} from "@/lib/site-image-slots";
 import { cn } from "@/lib/utils";
-
-const AUTO_ADVANCE_MS = 3000;
 
 export type HeroSlide = {
   src: string;
@@ -18,6 +21,10 @@ type HeroCarouselProps = {
   children: React.ReactNode;
   prevLabel: string;
   nextLabel: string;
+  /** Milliseconds between slides, 2000-15000. Defaults to the shipped 3 seconds. */
+  intervalMs?: number;
+  /** False pins the current slide; the arrows and dots still work. */
+  autoplay?: boolean;
 };
 
 export function HeroCarousel({
@@ -25,9 +32,19 @@ export function HeroCarousel({
   children,
   prevLabel,
   nextLabel,
+  intervalMs = HERO_INTERVAL_DEFAULT_MS,
+  autoplay = true,
 }: HeroCarouselProps) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+
+  // The server validates the stored interval, but this component is also the
+  // fallback for a stale cache or a bad prop, so it refuses an unusable value
+  // rather than scheduling a 200 ms slideshow.
+  const interval =
+    Number.isInteger(intervalMs) && intervalMs >= HERO_INTERVAL_MIN_MS && intervalMs <= HERO_INTERVAL_MAX_MS
+      ? intervalMs
+      : HERO_INTERVAL_DEFAULT_MS;
 
   const go = useCallback(
     (dir: number) => {
@@ -36,13 +53,26 @@ export function HeroCarousel({
     [slides.length],
   );
 
+  /**
+   * One `setTimeout` per slide rather than a `setInterval`, keyed on `index`.
+   * Every advance - and every click on an arrow or a dot - changes `index`, which
+   * tears the timeout down and schedules the next one, so a manual step always
+   * restarts the countdown instead of being interrupted by a pending tick.
+   *
+   * A single slide never starts a timer: there is nothing to advance to, and the
+   * arrows and dots are not rendered either. Autoplay off, a hovered carousel and
+   * a reduced-motion preference all skip it as well; the arrows keep working in
+   * all three cases.
+   */
   useEffect(() => {
-    if (paused || slides.length < 2) return;
+    if (!autoplay || paused || slides.length < 2) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (reduce.matches) return;
-    const timer = window.setInterval(() => go(1), AUTO_ADVANCE_MS);
-    return () => window.clearInterval(timer);
-  }, [paused, go, slides.length]);
+    const timer = window.setTimeout(() => {
+      setIndex((index + 1) % slides.length);
+    }, interval);
+    return () => window.clearTimeout(timer);
+  }, [autoplay, index, interval, paused, slides.length]);
 
   return (
     <section

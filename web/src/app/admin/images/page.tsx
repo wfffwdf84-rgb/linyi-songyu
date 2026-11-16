@@ -7,6 +7,10 @@ import {
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
 import { getAdminSession, requireRole } from "@/lib/admin-auth";
 import {
+  HERO_INTERVAL_DEFAULT_MS,
+  HERO_INTERVAL_MAX_MS,
+  HERO_INTERVAL_MIN_MS,
+  HERO_INTERVAL_STEP_MS,
   readSiteImagesReport,
   SITE_IMAGE_GROUPS,
   SITE_IMAGE_SLOTS,
@@ -48,13 +52,26 @@ export default async function AdminImagesPage() {
     );
   }
 
-  const { images, overrides, status } = await readSiteImagesReport();
+  const { images, overrides, settings, status } = await readSiteImagesReport();
+
+  // The carousel settings belong to the "首页" group, because that is where the
+  // operator changes the slides the cadence applies to. The bounds travel with
+  // the values so the panel and the API cannot disagree about 2-15 seconds.
+  const heroSettings = {
+    intervalMs: settings.heroIntervalMs,
+    autoplay: settings.heroAutoplay,
+    defaultIntervalMs: HERO_INTERVAL_DEFAULT_MS,
+    minIntervalMs: HERO_INTERVAL_MIN_MS,
+    maxIntervalMs: HERO_INTERVAL_MAX_MS,
+    stepIntervalMs: HERO_INTERVAL_STEP_MS,
+  };
 
   const groups: AdminImageGroupView[] = SITE_IMAGE_GROUPS.map((group) => ({
     id: group.id,
     label: group.label,
     pagePath: group.pagePath,
     hint: group.hint,
+    heroSettings: group.id === "home" ? heroSettings : undefined,
     slots: SITE_IMAGE_SLOTS.filter((slot) => slot.group === group.id).map((slot) => ({
       id: slot.id,
       label: slot.label,

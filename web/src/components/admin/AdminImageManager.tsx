@@ -34,11 +34,27 @@ export type AdminImageSlotView = {
   overridden: boolean;
 };
 
+/**
+ * The hero carousel settings, attached to the group they apply to. The bounds
+ * come from the shared rules module so the panel cannot drift from the API.
+ */
+export type AdminHeroSettingsView = {
+  /** Effective values, defaults already resolved. */
+  intervalMs: number;
+  autoplay: boolean;
+  defaultIntervalMs: number;
+  minIntervalMs: number;
+  maxIntervalMs: number;
+  stepIntervalMs: number;
+};
+
 export type AdminImageGroupView = {
   id: string;
   label: string;
   pagePath: string;
   hint: string;
+  /** Present on the group that owns the hero carousel (首页). */
+  heroSettings?: AdminHeroSettingsView;
   slots: AdminImageSlotView[];
 };
 
@@ -57,6 +73,7 @@ type SaveResponse = {
   value?: string | string[];
   restored?: boolean;
   written?: boolean;
+  settings?: { heroIntervalMs: number; heroAutoplay: boolean };
 };
 
 const ERROR_TEXT: Record<string, string> = {
@@ -66,6 +83,8 @@ const ERROR_TEXT: Record<string, string> = {
   invalid_body: "上传内容无法识别，请重试。",
   invalid_slot: "图片位不存在，请刷新页面后再试。",
   invalid_value: "图片地址不合法。",
+  invalid_interval: "切换间隔必须是 2 ~ 15 秒之间的整数毫秒。",
+  invalid_autoplay: "自动播放的取值不合法。",
   too_many: `一个轮播最多 ${SITE_IMAGE_ITEMS_MAX} 张。`,
   not_configured: "服务器未配置 Supabase 存储，无法上传或保存。",
   upload_failed: "上传失败，请稍后重试。",
@@ -78,6 +97,14 @@ function errorText(code: string | undefined) {
   return ERROR_TEXT[code ?? ""] ?? "操作失败，请稍后重试。";
 }
 
+/** Busy marker for the settings form; no slot id can collide with it. */
+const HERO_BUSY = "hero-settings";
+
+/** Milliseconds as the seconds string the number input edits. */
+function secondsFrom(ms: number) {
+  return String(ms / 1000);
+}
+
 function initialValues(groups: AdminImageGroupView[]) {
   const values: Record<string, string[]> = {};
   for (const group of groups) {
@@ -88,7 +115,12 @@ function initialValues(groups: AdminImageGroupView[]) {
 
 function signatureOf(groups: AdminImageGroupView[]) {
   return groups
-    .flatMap((group) => group.slots.map((slot) => `${slot.id}|${slot.overridden}|${slot.value.join(",")}`))
+    .flatMap((group) => [
+      // The hero settings are part of the signature so a server refresh after a
+      // save also resyncs the settings draft, exactly like the image values.
+      `${group.id}|${group.heroSettings ? `${group.heroSettings.intervalMs}/${group.heroSettings.autoplay}` : "-"}`,
+      ...group.slots.map((slot) => `${slot.id}|${slot.overridden}|${slot.value.join(",")}`),
+    ])
     .join("\u0001");
 }
 
@@ -98,8 +130,17 @@ export function AdminImageManager({ groups, status }: Props) {
   const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState<Notice | null>(null);
 
+  const heroSettings = groups.find((group) => group.heroSettings)?.heroSettings;
+  const [heroSeconds, setHeroSeconds] = useState(() =>
+    secondsFrom(heroSettings?.intervalMs ?? heroSettings?.defaultIntervalMs ?? 3000),
+  );
+  const [heroAutoplay, setHeroAutoplay] = useState(() => heroSettings?.autoplay ?? true);
+
   // After a save the server sends fresh slot values; the signature (not the
   // array identity) decides, so an unrelated re-render cannot wipe a local edit.
+  // The hero settings form keeps its own draft: it is written by its own request
+  // and re-read on the next full page load, so a refresh here must not overwrite
+  // what the operator just typed.
   const signature = useMemo(() => signatureOf(groups), [groups]);
   const lastSignature = useRef(signature);
   useEffect(() => {
@@ -131,6 +172,61 @@ export function AdminImageManager({ groups, status }: Props) {
       router.refresh();
     } catch {
       setNotice({ tone: "error", text: "网络错误，操作没有保存。" });
+    } finally {
+      setBusy("");
+    }
+  }
+
+  /**
+   * Saves the hero cadence and autoplay switch. The bounds are checked here too,
+   * so a typo is answered at once instead of after a round trip - the API checks
+   * them again, because this panel is only a convenience.
+   */
+  async function saveHeroSettings() {
+    if (!heroSettings) return;
+    const seconds = Number(heroSeconds);
+    const intervalMs = Math.round(seconds * 1000);
+    if (
+      heroSeconds.trim() === "" ||
+      !Number.isFinite(seconds) ||
+      intervalMs < heroSettings.minIntervalMs ||
+      intervalMs > heroSettings.maxIntervalMs
+    ) {
+      setNotice({
+        tone: "error",
+        text: `切换间隔需要在 ${heroSettings.minIntervalMs / 1000} ~ ${heroSettings.maxIntervalMs / 1000} 秒之间。`,
+      });
+      return;
+    }
+    setBusy(HERO_BUSY);
+    setNotice(null);
+    try {
+      const response = await fetch("/api/admin/images", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ settings: { heroIntervalMs: intervalMs, heroAutoplay } }),
+      });
+      const data = (await response.json().catch(() => null)) as SaveResponse | null;
+      if (!response.ok || !data?.ok) {
+        setNotice({ tone: "error", text: errorText(data?.error) });
+        return;
+      }
+      const stored = data.settings;
+      if (stored) {
+        setHeroSeconds(secondsFrom(stored.heroIntervalMs));
+        setHeroAutoplay(stored.heroAutoplay);
+        setNotice({
+          tone: "ok",
+          text: `轮播设置已保存：每 ${secondsFrom(stored.heroIntervalMs)} 秒切换，自动播放${
+            stored.heroAutoplay ? "开启" : "关闭"
+          }。`,
+        });
+      } else {
+        setNotice({ tone: "ok", text: "轮播设置已保存。" });
+      }
+      router.refresh();
+    } catch {
+      setNotice({ tone: "error", text: "网络错误，设置没有保存。" });
     } finally {
       setBusy("");
     }
@@ -406,6 +502,62 @@ export function AdminImageManager({ groups, status }: Props) {
               );
             })}
           </ul>
+
+          {group.heroSettings ? (
+            <div className="border-t border-outline-variant p-4">
+              <h3 className="flex items-center gap-2 text-body-lg font-semibold text-on-surface">
+                <MaterialIcon name="tune" className="text-[20px] text-primary" />
+                轮播设置
+              </h3>
+              <p className="mt-1 text-body-sm text-on-surface-variant">
+                首屏轮播图超过 1 张时，按这个间隔自动切换；输入框里是当前保存的设置值。
+              </p>
+              <div className="mt-3 flex flex-wrap items-end gap-4">
+                <label className="flex flex-col gap-1 text-body-sm text-on-surface-variant">
+                  切换间隔（秒）
+                  <span className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min={group.heroSettings.minIntervalMs / 1000}
+                      max={group.heroSettings.maxIntervalMs / 1000}
+                      step={group.heroSettings.stepIntervalMs / 1000}
+                      value={heroSeconds}
+                      disabled={busy === HERO_BUSY}
+                      onChange={(event) => setHeroSeconds(event.target.value)}
+                      className="w-24 rounded-lg border border-outline-variant bg-surface px-3 py-2 text-body-md text-on-surface focus:border-primary focus:outline-none disabled:opacity-60"
+                    />
+                    <span>秒</span>
+                  </span>
+                </label>
+                <label className="inline-flex items-center gap-2 pb-2.5 text-body-md text-on-surface">
+                  <input
+                    type="checkbox"
+                    checked={heroAutoplay}
+                    disabled={busy === HERO_BUSY}
+                    onChange={(event) => setHeroAutoplay(event.target.checked)}
+                    className="h-4 w-4 accent-primary"
+                  />
+                  自动播放
+                </label>
+                <button
+                  type="button"
+                  onClick={() => void saveHeroSettings()}
+                  disabled={busy === HERO_BUSY}
+                  className="inline-flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-body-md font-semibold text-on-primary disabled:opacity-60"
+                >
+                  <MaterialIcon name="save" className="text-[18px]" />
+                  {busy === HERO_BUSY ? "保存中…" : "保存设置"}
+                </button>
+              </div>
+              <p className="mt-2 text-technical-data text-on-surface-variant/70">
+                可填 {group.heroSettings.minIntervalMs / 1000} ~{" "}
+                {group.heroSettings.maxIntervalMs / 1000} 秒，默认{" "}
+                {group.heroSettings.defaultIntervalMs / 1000} 秒。关闭自动播放后，
+                访客仍可用左右箭头和圆点手动切换。
+              </p>
+            </div>
+          ) : null}
         </section>
       ))}
     </div>
