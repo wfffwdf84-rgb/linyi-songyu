@@ -18,7 +18,7 @@ type UserRow = {
 const ROLE_LABELS: Record<Role, string> = { owner: "所有者", editor: "运营", sales: "业务员" };
 
 const ERRORS: Record<string, string> = {
-  invalid_username: "用户名需 3–32 位：中文、字母、数字或 . _ -",
+  invalid_username: "用户名需 2–32 位：中文、字母、数字或 . _ -",
   invalid_password: "密码至少 8 位。",
   invalid_role: "请选择有效的角色。",
   username_taken: "该用户名已存在。",
@@ -152,7 +152,7 @@ export function AdminUserManager({ users, currentUserId }: { users: UserRow[]; c
               onChange={(event) => setUsername(event.target.value)}
               autoCapitalize="none"
               spellCheck={false}
-              placeholder="如 sales01"
+              placeholder="如 张三 或 sales01"
               className="w-full rounded-lg border-2 border-outline-variant bg-surface px-3 py-2 text-body-md text-on-surface focus:border-primary focus:ring-0"
             />
           </label>

@@ -31,7 +31,9 @@ const SCRYPT_KEYLEN = 64;
 const PASSWORD_MIN = 8;
 const PASSWORD_MAX = 128;
 // Chinese names are what the team actually types, so Han characters are allowed.
-const USERNAME_PATTERN = /^[\p{Script=Han}a-z0-9][\p{Script=Han}a-z0-9._-]{2,31}$/u;
+// Two characters is the minimum because 张三 and 李四 are ordinary full names,
+// and the password - not the username - is what protects the account.
+const USERNAME_PATTERN = /^[\p{Script=Han}a-z0-9][\p{Script=Han}a-z0-9._-]{1,31}$/u;
 const NAME_MAX = 40;
 
 export const adminRoles = ["owner", "editor", "sales"] as const;
