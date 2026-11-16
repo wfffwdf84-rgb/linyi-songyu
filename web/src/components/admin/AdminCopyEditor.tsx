@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
+import { COPY_GROUP_PAGE_PATHS, copyKeyLabel } from "@/lib/copy-key-labels";
 import { copyErrorText } from "@/lib/copy-messages";
 import { COPY_VALUE_MAX } from "@/lib/copy-rules";
 import { cn } from "@/lib/utils";
@@ -113,6 +114,7 @@ export function AdminCopyEditor({
     return rows.filter(
       (row) =>
         row.key.toLowerCase().includes(needle) ||
+        copyKeyLabel(row.key).toLowerCase().includes(needle) ||
         row.original.toLowerCase().includes(needle) ||
         (values[row.key] ?? "").toLowerCase().includes(needle),
     );
@@ -347,7 +349,18 @@ export function AdminCopyEditor({
         })}
       </div>
 
-      <p className="text-body-sm text-on-surface-variant">{group.hint}</p>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <p className="text-body-sm text-on-surface-variant">{group.hint}</p>
+        <a
+          href={COPY_GROUP_PAGE_PATHS[group.id] ?? "/"}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-body-sm text-primary hover:underline"
+        >
+          <MaterialIcon name="open_in_new" className="text-[16px]" />
+          查看这个页面
+        </a>
+      </div>
 
       <div className="sticky top-0 z-10 flex flex-wrap items-center gap-3 rounded-xl border border-outline-variant bg-surface-container-low p-3">
         <label className="flex min-w-[16rem] flex-1 items-center gap-2">
@@ -355,7 +368,7 @@ export function AdminCopyEditor({
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="搜索 key 或文案内容"
+            placeholder="搜索说明、key 或文案内容"
             className="w-full rounded-lg border-2 border-outline-variant bg-surface px-3 py-2 text-body-md text-on-surface focus:border-primary focus:ring-0"
           />
         </label>
@@ -426,8 +439,14 @@ export function AdminCopyEditor({
             const showOriginal = row.overridden || isDirty;
             return (
               <li key={row.key} className="border-b border-outline-variant px-4 py-3 last:border-0">
+                <div className="mb-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  {/* The Chinese sentence is the heading: it is what tells the
+                      operator which spot on the page this row edits. The key
+                      stays visible, small and grey, for the developer in the room. */}
+                  <h3 className="text-body-lg font-semibold text-on-surface">{copyKeyLabel(row.key)}</h3>
+                  <code className="text-technical-data text-on-surface-variant/50">{row.key}</code>
+                </div>
                 <div className="mb-1 flex flex-wrap items-center gap-2">
-                  <code className="text-technical-data text-on-surface-variant/80">{row.key}</code>
                   {row.overridden ? (
                     <span className="rounded bg-primary-fixed px-2 py-0.5 text-label-caps text-on-primary-fixed">
                       已修改
@@ -462,7 +481,7 @@ export function AdminCopyEditor({
                   }
                   maxLength={COPY_VALUE_MAX}
                   rows={draft.length > 120 ? 3 : 2}
-                  aria-label={`文案 ${row.key}`}
+                  aria-label={`文案 ${copyKeyLabel(row.key)}（${row.key}）`}
                   className={inputClass}
                 />
                 {showOriginal ? (
