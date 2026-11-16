@@ -1,6 +1,7 @@
 import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from "node:crypto";
 import { unstable_cache } from "next/cache";
 import { isSupabaseMediaHost, readDocument, storageConfigured, writeDocument } from "@/lib/supabase";
+import { cleanOemNumbers, sameOemNumbers } from "@/lib/oem-numbers";
 import type { Product, ProductSpec } from "@/lib/data/products";
 
 /**
@@ -63,6 +64,11 @@ export type ProductOverride = {
   specs?: ProductSpec[];
   /** The photo is editable too: an uploaded Supabase public URL or a /images/... path. */
   image?: string;
+  /**
+   * OEM cross-reference numbers that replace the seed values. An absent or
+   * empty list means "no override": the seed numbers (if any) stay in effect.
+   */
+  oemNumbers?: string[];
 };
 
 export type Overrides = Record<string, ProductOverride>;
@@ -242,9 +248,9 @@ function coerceNewProduct(value: unknown): NewProduct | null {
     specs,
     technicalSpecs: technicalSpecs.length > 0 ? technicalSpecs : specs,
     compatibleMachines: coerceText(row.compatibleMachines, COMPATIBLE_MAX),
-    oemNumbers: Array.isArray(row.oemNumbers)
-      ? row.oemNumbers.map((number) => coerceText(number, PART_NUMBER_MAX)).filter(Boolean)
-      : [],
+    // A stored list is re-cleaned on read so a hand-edited document cannot
+    // introduce a number the admin panel would never have saved.
+    oemNumbers: cleanOemNumbers(row.oemNumbers).numbers,
     createdAt: coerceText(row.createdAt, 40) || new Date(0).toISOString(),
   };
   const createdBy = coerceText(row.createdBy, 64);
@@ -551,6 +557,11 @@ export function applyOverride(product: Product, override?: ProductOverride): Cat
     next.technicalSpecs = copySpecs(override.specs);
   }
   if (override.price) next.price = { ...override.price };
+  // The override list wins wholesale; an empty list is not an override and the
+  // seed numbers stay visible, which is what "清空 = 回到种子值" means.
+  if (override.oemNumbers && override.oemNumbers.length > 0) {
+    next.oemNumbers = [...override.oemNumbers];
+  }
   return next;
 }
 
@@ -565,6 +576,7 @@ export type ProductOverridePatch = {
   hidden?: boolean;
   specs?: ProductSpec[];
   image?: string;
+  oemNumbers?: string[];
 };
 
 function text(value: unknown, max: number, code: string) {
@@ -631,6 +643,16 @@ function priceValue(value: unknown): ProductPrice | null | undefined {
 }
 
 /**
+ * The OEM list as the API accepts it. A non-array is a client bug and fails the
+ * request; entries that break a rule are dropped individually and reported by
+ * the admin form's pre-check, which blocks a save before it reaches this code.
+ */
+function oemNumberList(value: unknown): string[] {
+  if (!Array.isArray(value)) throw new ProductStoreError("invalid_oem_numbers");
+  return cleanOemNumbers(value).numbers;
+}
+
+/**
  * An image reference: an uploaded Supabase public URL, or a path inside the
  * site. The allowed HTTPS hosts mirror `images.remotePatterns` in next.config.ts,
  * so a saved image can always be rendered by <Image>.
@@ -676,6 +698,7 @@ export function sanitizePatch(input: unknown): ProductOverridePatch {
   if (specs !== undefined) patch.specs = specs;
   const image = imageValue(body.image);
   if (image) patch.image = image;
+  if (body.oemNumbers !== undefined) patch.oemNumbers = oemNumberList(body.oemNumbers);
   return patch;
 }
 
@@ -725,6 +748,15 @@ export function buildOverride(product: Product, patch: ProductOverridePatch): Pr
   if (patch.hidden === true) override.hidden = true;
   if (patch.specs && !sameSpecs(patch.specs, product.specs)) override.specs = patch.specs;
   if (patch.image && patch.image !== product.image) override.image = patch.image;
+  // An empty list clears the override rather than blanking the seed numbers, so
+  // only a non-empty list that actually differs is stored.
+  if (
+    patch.oemNumbers &&
+    patch.oemNumbers.length > 0 &&
+    !sameOemNumbers(patch.oemNumbers, product.oemNumbers ?? [])
+  ) {
+    override.oemNumbers = [...patch.oemNumbers];
+  }
 
   return override;
 }
@@ -791,6 +823,7 @@ export function sanitizeNewProduct(
   const price = priceValue(body.price ?? null);
   const specs = specRows(body.specs) ?? [];
   const technicalSpecs = specRows(body.technicalSpecs) ?? [];
+  const oemNumbers = body.oemNumbers === undefined ? [] : oemNumberList(body.oemNumbers);
 
   // Optional list of extra brands: the form asks for one, the record stores the
   // list the catalogue searches and filters on.
@@ -819,7 +852,7 @@ export function sanitizeNewProduct(
     // a form with only one table must fill both.
     technicalSpecs: technicalSpecs.length > 0 ? technicalSpecs : specs,
     compatibleMachines: text(body.compatibleMachines, COMPATIBLE_MAX, "invalid_compatible") ?? "",
-    oemNumbers: [],
+    oemNumbers,
   };
   if (price) draft.price = price;
   return draft;

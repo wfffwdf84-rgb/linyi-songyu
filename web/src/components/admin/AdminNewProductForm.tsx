@@ -3,7 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AdminImageField } from "@/components/admin/AdminImageField";
+import { AdminOemNumbersField } from "@/components/admin/AdminOemNumbersField";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
+import { parseOemNumberText } from "@/lib/oem-numbers";
 
 type Currency = "USD" | "CNY" | "RMB";
 type SpecRow = { labelKey: string; en: string; zh: string };
@@ -22,6 +24,7 @@ const ERRORS: Record<string, string> = {
   invalid_image: "图片地址无效：只接受 https 的 Blob / Google 图片地址，或站内 /images/… 路径。",
   invalid_specs: "规格无效：labelKey 只能用字母/数字/下划线（字母开头），值上限 200 字，最多 40 行。",
   invalid_compatible: "适配机型过长（上限 400 字）。",
+  invalid_oem_numbers: "OEM 交叉参考号无效：最多 10 个，每个 1–40 个字符。",
   invalid_patch: "提交的内容无法识别，请刷新页面重试。",
   too_many_products: "覆盖层里的新增产品已达上限，请先清理。",
   not_configured: "服务器未配置 Blob 存储或加密密钥，无法保存。",
@@ -56,6 +59,7 @@ export function AdminNewProductForm({
   const [inStock, setInStock] = useState(true);
   const [compatibleMachines, setCompatibleMachines] = useState("");
   const [specs, setSpecs] = useState<SpecRow[]>([]);
+  const [oemText, setOemText] = useState("");
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -99,6 +103,10 @@ export function AdminNewProductForm({
       if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(row.labelKey.trim())) return ERRORS.invalid_specs;
       if (row.en.length > 200 || row.zh.length > 200) return ERRORS.invalid_specs;
     }
+    const oem = parseOemNumberText(oemText);
+    if (oem.rejected.length > 0) {
+      return `OEM 交叉参考号有 ${oem.rejected.length} 条无效，请按下方提示修正后再保存。`;
+    }
     return null;
   }
 
@@ -133,6 +141,7 @@ export function AdminNewProductForm({
           image: image.trim(),
           inStock,
           compatibleMachines,
+          oemNumbers: parseOemNumberText(oemText).numbers,
           price:
             amountText === ""
               ? null
@@ -217,6 +226,8 @@ export function AdminNewProductForm({
           </label>
         </div>
       </section>
+
+      <AdminOemNumbersField value={oemText} onChange={setOemText} seedNumbers={[]} disabled={busy} />
 
       <section className="rounded-xl border border-outline-variant bg-surface-container-lowest p-5">
         <h2 className="mb-1 flex items-center gap-2 text-headline-md text-on-surface">

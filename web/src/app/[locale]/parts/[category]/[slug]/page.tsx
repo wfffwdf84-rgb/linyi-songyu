@@ -157,18 +157,16 @@ export default async function ProductPage({ params }: PageProps) {
                 {name}
               </h1>
               {oemNumbers.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-technical-data text-on-surface-variant">
-                    {t("oemPart")}:
-                  </span>
-                  {oemNumbers.map((number) => (
-                    <span
-                      key={number}
-                      className="rounded border border-outline-variant bg-surface-container-low px-2 py-0.5 text-technical-data text-on-surface-variant"
-                    >
-                      {number}
-                    </span>
-                  ))}
+                <div className="mb-4 rounded-lg border border-outline-variant bg-surface-container-low p-3">
+                  <p className="mb-1 flex items-center gap-1.5 text-label-caps text-on-surface-variant">
+                    <MaterialIcon name="travel_explore" className="text-[16px]" />
+                    {t("oemCrossReference")}
+                  </p>
+                  {/* The OEM numbers are what buyers search for, so they keep the
+                      technical font and stay on one wrapping line separated by ·. */}
+                  <p className="break-words text-technical-data text-on-surface">
+                    {oemNumbers.join(" · ")}
+                  </p>
                 </div>
               )}
             </div>

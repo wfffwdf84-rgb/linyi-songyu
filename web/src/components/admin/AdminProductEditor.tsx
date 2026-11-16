@@ -3,7 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AdminImageField } from "@/components/admin/AdminImageField";
+import { AdminOemNumbersField } from "@/components/admin/AdminOemNumbersField";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
+import { parseOemNumberText } from "@/lib/oem-numbers";
 
 type Localised = { en: string; zh: string };
 type SpecRow = { labelKey: string; value: Localised };
@@ -21,6 +23,8 @@ type EditorProduct = {
   inStock: boolean;
   hidden: boolean;
   overridden: boolean;
+  /** OEM numbers after the overlay is applied: what the site shows now. */
+  oemNumbers: string[];
   /** A product created in the panel: its URL 404s after a delete. */
   isNew: boolean;
   price: Price | null;
@@ -33,6 +37,7 @@ type SeedValues = {
   image: string;
   inStock: boolean;
   price: Price | null;
+  oemNumbers: string[];
 };
 
 const ERRORS: Record<string, string> = {
@@ -42,6 +47,7 @@ const ERRORS: Record<string, string> = {
   invalid_specs: "规格无效：labelKey 只能用字母/数字/下划线（字母开头），值上限 200 字，最多 40 行。",
   invalid_slug: "产品标识无效。",
   invalid_image: "图片地址无效：只接受 https 的 Blob / Google 图片地址，或站内 /images/… 路径。",
+  invalid_oem_numbers: "OEM 交叉参考号无效：需要是列表，最多 10 个，每个 1–40 个字符。",
   invalid_patch: "提交的内容无法识别，请刷新页面重试。",
   not_found: "产品不存在。",
   not_configured: "服务器未配置 Blob 存储或加密密钥，无法保存。",
@@ -82,6 +88,7 @@ export function AdminProductEditor({
   const [hidden, setHidden] = useState(product.hidden);
   const [image, setImage] = useState(product.image);
   const [specs, setSpecs] = useState<EditableRow[]>(rowsFromSpecs(product.specs));
+  const [oemText, setOemText] = useState(product.oemNumbers.join("\n"));
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -118,6 +125,7 @@ export function AdminProductEditor({
     setPriceAmount(seed.price ? String(seed.price.amount) : "");
     setPriceCurrency(seed.price?.currency ?? "USD");
     setPriceNote(seed.price?.note ?? "");
+    setOemText(seed.oemNumbers.join("\n"));
     setSaved("");
     setError("");
   }
@@ -191,9 +199,16 @@ export function AdminProductEditor({
   }
 
   async function onSave() {
-    setBusy(true);
     setError("");
     setSaved("");
+
+    const oem = parseOemNumberText(oemText);
+    if (oem.rejected.length > 0) {
+      setError(`OEM 交叉参考号有 ${oem.rejected.length} 条无效，请按下方提示修正后再保存。`);
+      return;
+    }
+
+    setBusy(true);
 
     const trimmedAmount = priceAmount.trim();
     const price =
@@ -218,6 +233,7 @@ export function AdminProductEditor({
             inStock,
             hidden,
             image,
+            oemNumbers: oem.numbers,
             specs: specs.map((row) => ({
               labelKey: row.labelKey.trim(),
               value: { en: row.en, zh: row.zh },
@@ -294,6 +310,13 @@ export function AdminProductEditor({
           </label>
         </div>
       </section>
+
+      <AdminOemNumbersField
+        value={oemText}
+        onChange={setOemText}
+        seedNumbers={seed.oemNumbers}
+        disabled={busy}
+      />
 
       <section className="rounded-xl border border-outline-variant bg-surface-container-lowest p-5">
         <h2 className="mb-1 flex items-center gap-2 text-headline-md text-on-surface">

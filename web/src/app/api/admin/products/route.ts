@@ -31,6 +31,7 @@ const STATUS: Record<string, number> = {
   invalid_category: 400,
   invalid_image: 400,
   invalid_compatible: 400,
+  invalid_oem_numbers: 400,
   slug_taken: 409,
   part_number_taken: 409,
   too_many_products: 409,

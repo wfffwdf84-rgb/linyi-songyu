@@ -212,7 +212,12 @@ export default async function AdminProductsPage({ searchParams }: Props) {
               rows.map((product) => (
                 <tr key={product.slug} className="border-b border-outline-variant last:border-0">
                   <td className="px-4 py-3 align-top text-technical-data text-on-surface">
-                    {product.partNumber}
+                    <span className="block">{product.partNumber}</span>
+                    {product.oemNumbers && product.oemNumbers.length > 0 ? (
+                      <span className="mt-1 block text-body-sm text-on-surface-variant/80">
+                        OEM ×{product.oemNumbers.length} · {product.oemNumbers[0]}
+                      </span>
+                    ) : null}
                   </td>
                   <td className="px-4 py-3 align-top">
                     <div className="flex items-start gap-3">

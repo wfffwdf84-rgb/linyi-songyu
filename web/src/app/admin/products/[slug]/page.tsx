@@ -30,6 +30,7 @@ function baseValues(base: CatalogProduct) {
     image: base.image,
     inStock: base.inStock,
     price: base.price ?? null,
+    oemNumbers: base.oemNumbers ?? [],
   };
 }
 
@@ -108,6 +109,7 @@ export default async function AdminProductEditPage({ params }: Props) {
           inStock: product.inStock,
           hidden: product.hidden,
           overridden: product.overridden,
+          oemNumbers: product.oemNumbers ?? [],
           isNew: product.isNew,
           price: product.price ?? null,
         }}
