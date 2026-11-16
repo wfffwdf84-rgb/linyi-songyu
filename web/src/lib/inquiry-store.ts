@@ -17,15 +17,28 @@ export type InquiryItem = {
   qty: number;
 };
 
+/** Which form on the site produced the lead. Older records have no value. */
+export type InquiryForm = "quote" | "messagebox";
+
 export type StoredInquiry = {
   id: string;
   receivedAt: string;
   locale: string;
   page: string;
+  /**
+   * Origin form. Optional because every lead stored before this field existed
+   * is a quote form and must keep reading back unchanged.
+   */
+  form?: InquiryForm;
   types: string[];
   urgent: boolean;
   company: string;
   contact: string;
+  /**
+   * Optional reply-to address. Leads stored before this field existed simply
+   * have no key, so every reader must treat it as possibly undefined.
+   */
+  email?: string;
   vin: string;
   brand: string;
   message: string;

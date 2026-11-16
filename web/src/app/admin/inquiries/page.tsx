@@ -127,6 +127,10 @@ export default async function AdminInquiriesPage() {
                   ) : (
                     <span className="text-body-sm text-on-surface-variant">公司未填</span>
                   )}
+                  <span className="inline-flex items-center gap-1 rounded bg-surface-container px-2 py-0.5 text-technical-data text-on-surface-variant">
+                    <MaterialIcon name="mail" className="text-[16px]" />
+                    邮箱 <span className="text-on-surface">{inquiry.email || "—"}</span>
+                  </span>
                 </div>
 
                 {ipCountry || numberCountry || placedAt ? (

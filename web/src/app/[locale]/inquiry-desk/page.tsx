@@ -147,6 +147,10 @@ export default async function InquiryDeskPage({ params }: Props) {
                     {inquiry.company ? (
                       <span className="text-body-md text-on-surface-variant">{inquiry.company}</span>
                     ) : null}
+                    <span className="inline-flex items-center gap-1 text-body-md text-on-surface-variant">
+                      <MaterialIcon name="mail" className="text-[16px]" />
+                      {tQuote("email")}: <span className="text-on-surface">{inquiry.email || "—"}</span>
+                    </span>
                   </div>
 
                   {ipCountry || numberCountry || placedAt ? (

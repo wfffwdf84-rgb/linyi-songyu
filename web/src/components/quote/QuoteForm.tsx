@@ -8,7 +8,7 @@ import { FacebookIcon, WhatsAppIcon, YouTubeIcon } from "@/components/ui/BrandIc
 import { inquirySmsHref, inquiryWhatsAppHref, openInquirySms, siteConfig } from "@/lib/site";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
-import { type InquiryTypeId, inquiryTypeIds, normalizeInquiryType } from "@/lib/inquiry";
+import { type InquiryTypeId, inquiryTypeIds, isValidInquiryEmail, normalizeInquiryType } from "@/lib/inquiry";
 import { useQuoteList } from "@/components/quote/QuoteListProvider";
 
 const inquiryTypeIcons: Record<InquiryTypeId, string> = {
@@ -29,12 +29,13 @@ type QuoteFormProps = {
 type FormValues = {
   company: string;
   contact: string;
+  email: string;
   vin: string;
   brand: string;
   notes: string;
 };
 
-const emptyValues: FormValues = { company: "", contact: "", vin: "", brand: "", notes: "" };
+const emptyValues: FormValues = { company: "", contact: "", email: "", vin: "", brand: "", notes: "" };
 
 function readValues(form: HTMLFormElement | null): FormValues {
   if (!form) return emptyValues;
@@ -42,6 +43,7 @@ function readValues(form: HTMLFormElement | null): FormValues {
   return {
     company: String(fd.get("company") ?? "").trim(),
     contact: String(fd.get("contact") ?? "").trim(),
+    email: String(fd.get("email") ?? "").trim(),
     vin: String(fd.get("vin") ?? "").trim(),
     brand: String(fd.get("brand") ?? "").trim(),
     notes: String(fd.get("notes") ?? "").trim(),
@@ -65,6 +67,8 @@ export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
    * inquiry still reaches the sales phone.
    */
   const [fallbackBody, setFallbackBody] = useState("");
+  /** Server/client validation message shown next to the submit button. */
+  const [sendError, setSendError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const t = useTranslations("quote");
@@ -117,6 +121,7 @@ export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
       ...parts,
       values.company ? `${isZh ? "公司" : "Company"}: ${values.company}` : "",
       `${isZh ? "联系电话" : "Phone"}: ${values.contact}`,
+      values.email ? `${isZh ? "邮箱" : "Email"}: ${values.email}` : "",
       values.vin ? `VIN: ${values.vin}` : "",
       values.brand && values.brand !== t("selectBrand")
         ? `${isZh ? "品牌" : "Brand"}: ${values.brand}`
@@ -137,6 +142,8 @@ export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
   }
 
   function refreshFallback() {
+    // Any edit invalidates the last validation message.
+    setSendError("");
     if (!fallback) return;
     setFallbackBody(composeBody(readValues(formRef.current), selected));
   }
@@ -146,10 +153,12 @@ export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
     return {
       locale,
       page: window.location.pathname,
+      form: "quote",
       types: selected,
       urgent,
       company: String(fd.get("company") ?? ""),
       contact: String(fd.get("contact") ?? ""),
+      email: String(fd.get("email") ?? ""),
       vin: String(fd.get("vin") ?? ""),
       brand: String(fd.get("brand") ?? ""),
       notes: String(fd.get("notes") ?? ""),
@@ -163,31 +172,54 @@ export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
    * hand-off stays the primary path, but a blocked popup or a buyer without
    * WhatsApp no longer loses the lead.
    */
-  async function saveInquiry(form: HTMLFormElement): Promise<{ stored: boolean; reference: string }> {
+  async function saveInquiry(
+    form: HTMLFormElement,
+  ): Promise<{ stored: boolean; reference: string; error: string }> {
     try {
       const response = await fetch("/api/inquiry", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(buildPayload(form)),
       });
-      if (!response.ok) return { stored: false, reference: "" };
-      const data = (await response.json()) as { ok?: boolean; reference?: string };
-      return data.ok
-        ? { stored: true, reference: data.reference ?? "" }
-        : { stored: false, reference: "" };
+      const data = (await response.json().catch(() => null)) as
+        | { ok?: boolean; reference?: string; error?: string }
+        | null;
+      if (response.ok && data?.ok) {
+        return { stored: true, reference: data.reference ?? "", error: "" };
+      }
+      // contact_required / invalid_email are validation codes: the form, not
+      // the store, needs fixing. (company_required only applies to the message
+      // box, which is the only form that asks for a company name.)
+      return { stored: false, reference: "", error: data?.error ?? "" };
     } catch {
-      return { stored: false, reference: "" };
+      return { stored: false, reference: "", error: "network" };
     }
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
+    const values = readValues(form);
+    setSendError("");
+    // Email is optional, but a malformed one loses the reply: stop here and say
+    // so instead of sending a lead nobody can answer.
+    if (values.email && !isValidInquiryEmail(values.email)) {
+      setSendError(t("invalidEmail"));
+      form.querySelector<HTMLInputElement>('input[name="email"]')?.focus();
+      return;
+    }
     const body = buildBody(form);
     if (!body) return;
     setSaving(true);
     const saved = await saveInquiry(form);
     setSaving(false);
+    const code = saved.error;
+    if (code === "contact_required" || code === "invalid_email") {
+      setSendError(code === "contact_required" ? t("contactRequired") : t("invalidEmail"));
+      setSent(false);
+      setFallbackBody("");
+      return;
+    }
     track("generate_lead", {
       inquiry_types: selected.join(","),
       urgent,
@@ -441,6 +473,8 @@ export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
             <input
               name="company"
               type="text"
+              maxLength={160}
+              autoComplete="organization"
               placeholder={t("companyPlaceholder")}
               className="w-full rounded-lg border-2 border-outline-variant bg-surface px-4 py-3 text-body-md text-on-surface focus:border-primary focus:ring-0"
             />
@@ -449,12 +483,30 @@ export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
           <div>
             <label className="mb-2 block text-technical-data text-on-surface-variant">
               {t("contact")}
+              <span className="ms-0.5 text-error" aria-hidden="true">
+                *
+              </span>
             </label>
             <input
               name="contact"
               type="tel"
               required
               placeholder={t("contactPlaceholder")}
+              className="w-full rounded-lg border-2 border-outline-variant bg-surface px-4 py-3 text-body-md text-on-surface focus:border-primary focus:ring-0"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-technical-data text-on-surface-variant">
+              {t("email")}
+              <span className="ms-1 font-normal text-on-surface-variant">({t("optional")})</span>
+            </label>
+            <input
+              name="email"
+              type="email"
+              inputMode="email"
+              maxLength={120}
+              autoComplete="email"
+              placeholder={t("emailPlaceholder")}
               className="w-full rounded-lg border-2 border-outline-variant bg-surface px-4 py-3 text-body-md text-on-surface focus:border-primary focus:ring-0"
             />
           </div>
@@ -502,6 +554,12 @@ export function QuoteForm({ initialTypes = [] }: QuoteFormProps) {
           </div>
         </div>
       </div>
+
+      {sendError ? (
+        <p className="rounded-xl border border-error bg-error-container px-4 py-3 text-body-md text-on-error-container">
+          {sendError}
+        </p>
+      ) : null}
 
       <button
         type="submit"

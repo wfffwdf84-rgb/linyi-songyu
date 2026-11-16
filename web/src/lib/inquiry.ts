@@ -11,6 +11,21 @@ export const inquiryTypeIds = [
 
 export type InquiryTypeId = (typeof inquiryTypeIds)[number];
 
+/**
+ * Loose but effective: one @, no whitespace, and a dot in the domain. The
+ * server and both inquiry forms share this check, so the browser and the API
+ * never disagree about what an acceptable address looks like. Email is
+ * optional, so callers only run this on a non-empty value.
+ */
+export const INQUIRY_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export const INQUIRY_EMAIL_MAX = 120;
+
+export function isValidInquiryEmail(value: string) {
+  const email = value.trim();
+  return email.length > 0 && email.length <= INQUIRY_EMAIL_MAX && INQUIRY_EMAIL_PATTERN.test(email);
+}
+
 const inquiryTypeAliases: Record<string, InquiryTypeId> = {
   mainDrive: "transmission",
   planetCarrier: "transmission",

@@ -13,6 +13,7 @@ const HEADER = [
   "语言",
   "公司",
   "联系方式",
+  "邮箱",
   "电话归属国",
   "机型/品牌",
   "询盘类型",
@@ -70,6 +71,9 @@ export async function GET() {
         inquiry.locale ?? "",
         inquiry.company ?? "",
         inquiry.contact ?? "",
+        // Leads stored before the email field existed have no value: show a
+        // dash so the column is visibly empty rather than blank.
+        inquiry.email || "—",
         countryText(phoneCountry(inquiry.contact ?? "")),
         inquiry.brand ?? "",
         inquiryTypesLabelZh(inquiry.types ?? []),

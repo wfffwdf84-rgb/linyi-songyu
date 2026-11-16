@@ -206,6 +206,9 @@ export default async function AdminOverviewPage() {
                   公司 <span className={inquiry.company ? "" : "text-on-surface-variant"}>{inquiry.company || "未填"}</span>
                 </span>
                 <span className="text-technical-data text-on-surface">{inquiry.contact}</span>
+                <span className={cn("text-technical-data", inquiry.email ? "text-on-surface" : "text-on-surface-variant")}>
+                  邮箱 {inquiry.email || "—"}
+                </span>
                 {inquiry.types.length > 0 ? (
                   <span className="text-on-surface-variant">{inquiryTypesLabelZh(inquiry.types)}</span>
                 ) : null}

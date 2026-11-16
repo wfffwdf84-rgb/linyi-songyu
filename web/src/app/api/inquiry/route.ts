@@ -6,6 +6,7 @@ import {
   saveInquiry,
 } from "@/lib/inquiry-store";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { INQUIRY_EMAIL_PATTERN, INQUIRY_EMAIL_MAX } from "@/lib/inquiry";
 import { toChinese } from "@/lib/translate";
 import { readVisitorGeo } from "@/lib/visitor-geo";
 
@@ -33,14 +34,36 @@ export async function POST(request: Request) {
   // Honeypot: a real visitor never fills this hidden field.
   if (text(body.website)) return NextResponse.json({ ok: true, reference: "" });
 
+  const company = text(body.company, 160);
   const contact = text(body.contact);
+  // Cap at 500 so the control-character strip still runs, then judge the real
+  // length below: a 130-character address must fail, not be silently shortened.
+  const email = text(body.email, 500);
   const message = text(body.message, 2000);
+  // Which form sent this. Anything unknown - including an older client that
+  // sends no form at all - is treated as the full inquiry form, so nothing that
+  // used to work suddenly gets rejected.
+  const form = body.form === "messagebox" ? "messagebox" : "quote";
   const types = Array.isArray(body.types)
     ? body.types.map((value) => text(value, 40)).filter(Boolean).slice(0, 8)
     : [];
+
+  // The message box asks for a company name as a required field; the full
+  // inquiry form keeps it optional. Contact details are required either way.
+  if (form === "messagebox" && !company) {
+    return NextResponse.json({ ok: false, error: "company_required" }, { status: 400 });
+  }
+  if (!contact) {
+    return NextResponse.json({ ok: false, error: "contact_required" }, { status: 400 });
+  }
+  // Email is optional, but a typo in a reply address loses the lead: reject it
+  // instead of storing something nobody can answer.
+  if (email && (email.length > INQUIRY_EMAIL_MAX || !INQUIRY_EMAIL_PATTERN.test(email))) {
+    return NextResponse.json({ ok: false, error: "invalid_email" }, { status: 400 });
+  }
   // The contact form sends inquiry types; the message box sends a message.
-  // Either one is enough, but contact details are always required.
-  if (!contact || (types.length === 0 && !message)) {
+  // Either one is enough.
+  if (types.length === 0 && !message) {
     return NextResponse.json({ ok: false, error: "invalid" }, { status: 400 });
   }
 
@@ -69,10 +92,13 @@ export async function POST(request: Request) {
     const { id, receivedAt, record } = await saveInquiry({
       locale: text(body.locale, 8),
       page: text(body.page, 200),
+      form,
       types,
       urgent: body.urgent === true,
-      company: text(body.company),
+      company,
       contact,
+      // Omit the key entirely when empty so old readers see the same shape.
+      ...(email ? { email } : {}),
       vin: text(body.vin, 60),
       brand: text(body.brand, 60),
       message,
