@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
@@ -214,11 +215,32 @@ export default async function AdminProductsPage({ searchParams }: Props) {
                     {product.partNumber}
                   </td>
                   <td className="px-4 py-3 align-top">
-                    <span className="block text-body-md text-on-surface">{product.name.en}</span>
-                    <span className="block text-body-sm text-on-surface-variant">{product.name.zh}</span>
-                    <span className="block text-technical-data text-on-surface-variant/70">
-                      {product.slug}
-                    </span>
+                    <div className="flex items-start gap-3">
+                      <span className="h-12 w-12 shrink-0 overflow-hidden rounded border border-outline-variant bg-white">
+                        {product.image ? (
+                          <Image
+                            src={product.image}
+                            alt=""
+                            width={48}
+                            height={48}
+                            className="h-full w-full object-contain"
+                          />
+                        ) : (
+                          <span className="flex h-full w-full items-center justify-center text-on-surface-variant">
+                            <MaterialIcon name="image" className="text-[18px]" />
+                          </span>
+                        )}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-body-md text-on-surface">{product.name.en}</span>
+                        <span className="block text-body-sm text-on-surface-variant">
+                          {product.name.zh}
+                        </span>
+                        <span className="block text-technical-data text-on-surface-variant/70">
+                          {product.slug}
+                        </span>
+                      </span>
+                    </div>
                   </td>
                   <td className="px-4 py-3 align-top text-body-sm text-on-surface-variant">
                     {getCategory(product.categorySlug)?.name.zh ?? product.categorySlug}
