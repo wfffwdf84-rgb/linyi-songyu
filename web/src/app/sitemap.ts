@@ -5,12 +5,16 @@ import { siteConfig } from "@/lib/site";
 import { appLocales, localePath } from "@/lib/locales";
 
 /**
- * A sitemap generated purely at build time never learns about a product added
- * in the panel: revalidatePath() expires the page cache, not the file written
- * during the build. Hourly regeneration fixes the drift on its own, and the
- * admin's revalidatePath("/sitemap.xml") then refreshes it on demand.
+ * Built on every request.
+ *
+ * A sitemap prerendered at build time never learns about a product added in the
+ * panel: revalidatePath() expires the page cache rather than that file, and a
+ * revalidate window did not reliably regenerate it behind the CDN either. The
+ * document is a few hundred kilobytes of cheap string work and search engines
+ * fetch it a handful of times a day, so generating it fresh is the honest
+ * trade: a new product is in the sitemap the moment its page is live.
  */
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteConfig.url;
