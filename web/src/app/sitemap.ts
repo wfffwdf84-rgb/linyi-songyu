@@ -4,6 +4,14 @@ import { getPublicProducts } from "@/lib/catalog";
 import { siteConfig } from "@/lib/site";
 import { appLocales, localePath } from "@/lib/locales";
 
+/**
+ * A sitemap generated purely at build time never learns about a product added
+ * in the panel: revalidatePath() expires the page cache, not the file written
+ * during the build. Hourly regeneration fixes the drift on its own, and the
+ * admin's revalidatePath("/sitemap.xml") then refreshes it on demand.
+ */
+export const revalidate = 300;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteConfig.url;
 
