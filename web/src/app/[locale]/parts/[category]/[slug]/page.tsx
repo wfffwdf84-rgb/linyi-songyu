@@ -133,7 +133,7 @@ export default async function ProductPage({ params }: PageProps) {
                 fill
                 quality={100}
                 unoptimized
-                className={product.imageFit === "contain" ? "object-contain object-center p-6" : "object-cover object-center"}
+                className="object-contain object-center p-4"
                 sizes="(max-width: 768px) 100vw, 60vw"
                 priority
               />
