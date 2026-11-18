@@ -1,145 +1,144 @@
-"use client";
-
-import { useMemo, useState, type ReactNode } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import type { ReactNode } from "react";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { ProductCard } from "@/components/catalog/ProductCard";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
+import { brandLabel } from "@/lib/brand-names";
+import { buildCategoryHref, type BrandFacet } from "@/lib/catalog-query";
 import type { CategoryFilter } from "@/lib/data/categories";
-import { filterProducts, type Product } from "@/lib/data/products";
 import { loc } from "@/lib/locale";
 import { cn } from "@/lib/utils";
-import { brandLabel } from "@/lib/brand-names";
 
 type CatalogFilterBarProps = {
-  products: Product[];
+  locale: string;
+  slug: string;
   filters: CategoryFilter[];
-  initialSelected?: string[];
-  hideBrandChips?: boolean;
+  /** Brand counts for this category, busiest first. */
+  facets: BrandFacet[];
+  activeBrand?: string;
+  activeFilters: string[];
+  /** Products in the category, before filtering. */
+  total: number;
+  /** Products after the brand and facet filters. */
+  shown: number;
+  page: number;
+  pageCount: number;
   toolbar?: ReactNode;
-  children?: ReactNode;
 };
 
-export function CatalogFilterBar({
-  products,
+const chipIdle =
+  "rounded border border-outline-variant bg-surface-container-high text-on-surface hover:border-primary";
+const chipActive = "rounded border border-primary bg-primary text-on-primary";
+
+/**
+ * Server-rendered filter bar: every chip is a real link, so a filtered view is
+ * crawlable, shareable and correct after a page reload. It used to be a client
+ * component that filtered the products it had already received, which cannot
+ * work once the list is paginated on the server.
+ */
+export async function CatalogFilterBar({
+  locale,
+  slug,
   filters,
-  initialSelected = [],
-  hideBrandChips = false,
+  facets,
+  activeBrand,
+  activeFilters,
+  total,
+  shown,
+  page,
+  pageCount,
   toolbar,
-  children,
 }: CatalogFilterBarProps) {
-  const locale = useLocale();
-  const t = useTranslations("catalog");
-  const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<string[]>(initialSelected);
+  const t = await getTranslations({ locale, namespace: "catalog" });
 
-  const brandFilters = useMemo(() => {
-    if (hideBrandChips) return [];
-    const names = [...new Set(products.flatMap((product) => product.brands))];
-    return names.map((brand) => ({
-      id: `brand:${brand}`,
-      en: brand,
-      zh: brandLabel(brand, "zh"),
-    }));
-  }, [products, hideBrandChips]);
-
-  const visibleFilters = open
-    ? [...filters, ...brandFilters.filter((item) => !filters.some((filter) => filter.id === item.id))]
-    : filters;
-  const visible = filterProducts(products, selected);
-
-  function toggle(id: string) {
-    if (hideBrandChips && id.startsWith("brand:")) return;
-    setSelected((current) =>
-      current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
-    );
-  }
-
-  function clearFilters() {
-    setSelected(hideBrandChips ? initialSelected.filter((id) => id.startsWith("brand:")) : []);
-  }
+  // Brand chips are generated from the products now; the eight brand ids that
+  // were hard-coded in the category data would only duplicate them.
+  const facetFilters = filters.filter((filter) => !filter.id.startsWith("brand:"));
+  const hasSelection = Boolean(activeBrand) || activeFilters.length > 0;
+  const status =
+    hasSelection
+      ? [t("productTotal", { count: total }), t("productFiltered", { count: shown })]
+      : [t("productTotal", { count: total })];
 
   return (
     <>
-      <div className="mb-6 rounded border border-outline-variant bg-surface-container-lowest p-4 shadow-sm md:mb-8 md:p-6">
-        {children}
-        <div className="flex flex-col gap-4 md:flex-row">
-          {toolbar}
-          <button
-            type="button"
-            aria-expanded={open}
-            onClick={() => setOpen((value) => !value)}
+      {toolbar ? <div className="flex flex-col gap-4 md:flex-row">{toolbar}</div> : null}
+
+      <div className="mt-5">
+        <p className="mb-2 text-label-caps text-on-surface-variant">{t("brandFilter")}</p>
+        <div className="flex max-h-44 flex-wrap gap-2 overflow-y-auto pe-1">
+          <Link
+            href={buildCategoryHref(slug, { filters: activeFilters })}
+            aria-current={activeBrand ? undefined : "page"}
             className={cn(
-              "flex items-center justify-center gap-2 rounded border px-4 py-3 text-label-caps font-bold md:px-6 md:py-4",
-              selected.length > 0 || open
-                ? "border-primary bg-primary-fixed/20 text-on-surface"
-                : "border-outline-variant bg-surface-variant text-on-surface hover:bg-surface-container-high",
+              "whitespace-nowrap px-3 py-1 text-xs font-bold",
+              activeBrand ? chipIdle : chipActive,
             )}
           >
-            <MaterialIcon name="tune" />
-            {t("filters")}
-            {selected.length > 0 ? (
-              <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] text-on-primary">
-                {selected.length}
-              </span>
-            ) : null}
-          </button>
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {visibleFilters.map((filter) => {
-            const active = selected.includes(filter.id);
+            {t("brandAll")}
+            <span className="ms-1.5 opacity-70">{total}</span>
+          </Link>
+          {facets.map((facet) => {
+            const selected = activeBrand?.toLowerCase() === facet.value.toLowerCase();
             return (
-              <button
-                key={filter.id}
-                type="button"
-                aria-pressed={active}
-                onClick={() => toggle(filter.id)}
+              <Link
+                key={facet.value}
+                href={buildCategoryHref(slug, { brand: facet.value, filters: activeFilters })}
+                aria-current={selected ? "page" : undefined}
                 className={cn(
-                  "rounded border px-3 py-1 text-xs font-bold whitespace-nowrap",
-                  active
-                    ? "border-primary bg-primary text-on-primary"
-                    : "border-outline-variant bg-surface-container-high text-on-surface hover:border-primary",
+                  "whitespace-nowrap px-3 py-1 text-xs font-bold",
+                  selected ? chipActive : chipIdle,
                 )}
               >
-                {loc(locale, filter.en, filter.zh)}
-              </button>
+                {brandLabel(facet.value, locale)}
+                <span className="ms-1.5 opacity-70">{facet.count}</span>
+              </Link>
             );
           })}
-          {selected.filter((id) => !(hideBrandChips && id.startsWith("brand:"))).length > 0 ? (
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="rounded border border-outline-variant px-3 py-1 text-xs font-bold text-on-surface-variant hover:text-primary"
-            >
-              {t("filterClear")}
-            </button>
-          ) : null}
         </div>
       </div>
-      {visible.length === 0 ? (
-        <div className="rounded border border-outline-variant bg-surface p-8">
-          <p className="text-body-md text-on-surface-variant">
-            {selected.some((id) => id === "brand:SANY" || id === "brand:Shantui")
-              ? t("filterEmptyRfq")
-              : t("filterEmpty")}
-          </p>
-          {selected.some((id) => id === "brand:SANY" || id === "brand:Shantui") ? (
-            <Link
-              href="/contact?type=oemMatch"
-              className="mt-4 inline-flex items-center gap-1 text-technical-data text-primary hover:underline"
-            >
-              {t("filterEmptyRfqCta")}
-              <MaterialIcon name="arrow_forward" className="text-sm" />
-            </Link>
-          ) : null}
+
+      {facetFilters.length > 0 ? (
+        <div className="mt-4">
+          <p className="mb-2 text-label-caps text-on-surface-variant">{t("filters")}</p>
+          <div className="flex flex-wrap gap-2">
+            {facetFilters.map((filter) => {
+              const selected = activeFilters.includes(filter.id);
+              const next = selected
+                ? activeFilters.filter((id) => id !== filter.id)
+                : [...activeFilters, filter.id];
+              return (
+                <Link
+                  key={filter.id}
+                  href={buildCategoryHref(slug, { brand: activeBrand, filters: next })}
+                  aria-current={selected ? "page" : undefined}
+                  className={cn(
+                    "whitespace-nowrap px-3 py-1 text-xs font-bold",
+                    selected ? chipActive : chipIdle,
+                  )}
+                >
+                  {loc(locale, filter.en, filter.zh)}
+                </Link>
+              );
+            })}
+            {hasSelection ? (
+              <Link
+                href={buildCategoryHref(slug, { filters: [] })}
+                className="flex items-center gap-1 rounded border border-outline-variant px-3 py-1 text-xs font-bold text-on-surface-variant hover:text-primary"
+              >
+                <MaterialIcon name="close" className="text-[14px]" />
+                {t("filterClear")}
+              </Link>
+            ) : null}
+          </div>
         </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-2 md:gap-6 xl:grid-cols-3">
-          {visible.map((product) => (
-            <ProductCard key={product.slug} product={product} />
-          ))}
-        </div>
-      )}
+      ) : null}
+
+      <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-body-sm text-on-surface-variant">
+        {status.map((item, index) => (
+          <span key={index}>{item}</span>
+        ))}
+        {pageCount > 1 ? <span>{t("pageStatus", { page, total: pageCount })}</span> : null}
+      </p>
     </>
   );
 }
