@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { categories } from "@/lib/data/categories";
+import { brandKey } from "@/lib/brand-names";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
 import { loc } from "@/lib/locale";
 import { cn } from "@/lib/utils";
@@ -84,12 +85,12 @@ export function CategorySidebar({ activeSlug, activeBrand }: CategorySidebarProp
                 {expanded ? (
                   <ul className="mb-2 ms-6 flex flex-col border-s border-outline-variant ps-3">
                     {brands.map((brand) => {
-                      const selected =
-                        activeBrand?.toLowerCase() === brand.id.toLowerCase();
+                      const href = `/parts/${cat.slug}?brand=${brandKey(brand.id)}`;
+                      const selected = activeBrand === brandKey(brand.id);
                       return (
                         <li key={brand.id}>
                           <Link
-                            href={`/parts/${cat.slug}?brand=${brand.id}`}
+                            href={href}
                             className={cn(
                               "block rounded px-2 py-1.5 text-sm transition-colors",
                               selected

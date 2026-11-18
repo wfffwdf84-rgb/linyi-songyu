@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { categories } from "@/lib/data/categories";
+import { brandKey } from "@/lib/brand-names";
 import { loc } from "@/lib/locale";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
 import { cn } from "@/lib/utils";
@@ -73,7 +74,7 @@ export function ProductsMenu() {
                 ? category.brands?.map((brand) => (
                     <Link
                       key={brand.id}
-                      href={`/parts/${category.slug}?brand=${brand.id}`}
+                      href={`/parts/${category.slug}?brand=${brandKey(brand.id)}`}
                       className="block px-4 py-1.5 ps-10 text-sm text-on-surface-variant hover:bg-surface-container-high hover:text-primary"
                     >
                       {loc(locale, brand.en, brand.zh)}

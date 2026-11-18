@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { categories } from "@/lib/data/categories";
+import { brandKey } from "@/lib/brand-names";
 import { loc } from "@/lib/locale";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
 import { cn } from "@/lib/utils";
@@ -105,7 +106,7 @@ export function MobileMenu() {
                     ? category.brands?.map((brand) => (
                         <Link
                           key={brand.id}
-                          href={`/parts/${category.slug}?brand=${brand.id}`}
+                          href={`/parts/${category.slug}?brand=${brandKey(brand.id)}`}
                           onClick={() => setOpen(false)}
                           className="block py-1 ps-4 text-sm text-on-surface-variant"
                         >

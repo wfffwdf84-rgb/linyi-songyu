@@ -78,7 +78,7 @@ export async function CatalogFilterBar({
             <span className="ms-1.5 opacity-70">{total}</span>
           </Link>
           {facets.map((facet) => {
-            const selected = activeBrand?.toLowerCase() === facet.value.toLowerCase();
+            const selected = activeBrand === facet.value;
             return (
               <Link
                 key={facet.value}
@@ -89,7 +89,7 @@ export async function CatalogFilterBar({
                   selected ? chipActive : chipIdle,
                 )}
               >
-                {brandLabel(facet.value, locale)}
+                {brandLabel(facet.label, locale)}
                 <span className="ms-1.5 opacity-70">{facet.count}</span>
               </Link>
             );

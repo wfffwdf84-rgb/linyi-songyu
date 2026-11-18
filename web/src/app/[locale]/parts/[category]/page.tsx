@@ -23,7 +23,7 @@ import {
   parsePageParam,
   resolveBrandValue,
 } from "@/lib/catalog-query";
-import { brandLabel } from "@/lib/brand-names";
+import { brandKey, brandLabel } from "@/lib/brand-names";
 import { localePath, pageAlternates } from "@/lib/locales";
 import { routing } from "@/i18n/routing";
 import { tr } from "@/lib/translated";
@@ -119,7 +119,10 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
   const products = await getPublicProductsByCategory(slug);
   const facets = brandFacets(products);
   const brandParam = firstParam(query.brand).trim();
-  const activeBrand = resolveBrandValue(facets, brandParam) ?? (brandParam || undefined);
+  // Both a canonical key and an old raw value (?brand=SDLG, ?brand=LiuGong)
+  // resolve here; the page then works with the canonical key only.
+  const activeBrand =
+    resolveBrandValue(facets, brandParam) ?? (brandParam ? brandKey(brandParam) : undefined);
   const activeFilters = parseFilterParam(firstParam(query.filter));
   const filtered = filterCatalogProducts(products, {
     brand: activeBrand,

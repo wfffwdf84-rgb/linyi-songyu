@@ -1,3 +1,4 @@
+import { brandKey, canonicalBrandName } from "@/lib/brand-names";
 import { filterProducts, type Product } from "@/lib/data/products";
 
 /**
@@ -14,8 +15,10 @@ import { filterProducts, type Product } from "@/lib/data/products";
 export const CATALOG_PAGE_SIZE = 24;
 
 export type BrandFacet = {
-  /** The brand value exactly as it is stored on the products, so links round-trip. */
+  /** Canonical brand key; this is what the filter link carries. */
   value: string;
+  /** Canonical Latin name, or the stored spelling for a brand we do not know. */
+  label: string;
   count: number;
 };
 
@@ -52,34 +55,47 @@ export function parseFilterParam(raw: string | undefined): string[] {
 
 /**
  * Brand counts for one category, taken from the products that are actually
- * listed there instead of a hand-maintained list. Most listed brands sort
- * first; ties fall back to the brand name so the chip order is stable across
- * locales and renders.
+ * listed there instead of a hand-maintained list.
+ *
+ * Counts are aggregated on the canonical key, not on the stored string: the
+ * catalogue spells one brand several ways ("Liugong"/"LiuGong", "LOVOL"/
+ * "Lovol"), and those must become one chip rather than one chip each.
+ *
+ * Most listed brands sort first; ties fall back to the Latin name so the chip
+ * order is stable across locales and renders.
  */
 export function brandFacets(products: Product[]): BrandFacet[] {
   const counts = new Map<string, BrandFacet>();
   for (const product of products) {
+    // One product counts once per brand, even when the import listed the same
+    // brand twice under two spellings: the chip number has to match the number
+    // of products its link shows.
+    const seen = new Set<string>();
     for (const brand of product.brands) {
-      const key = brand.toLowerCase();
+      const key = brandKey(brand);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
       const facet = counts.get(key);
       if (facet) facet.count += 1;
-      else counts.set(key, { value: brand, count: 1 });
+      else counts.set(key, { value: key, label: canonicalBrandName(brand), count: 1 });
     }
   }
   return [...counts.values()].sort(
-    (a, b) => b.count - a.count || a.value.localeCompare(b.value, "en", { sensitivity: "base" }),
+    (a, b) => b.count - a.count || a.label.localeCompare(b.label, "en", { sensitivity: "base" }),
   );
 }
 
 /**
- * The casing a brand is stored with, matched case-insensitively. A brand that
- * has no products in this category stays as the visitor typed it: the page then
- * renders its empty state instead of pretending the filter did something.
+ * The canonical key of a brand that is listed in this category. Both the old
+ * raw values (`?brand=SDLG`) and the canonical key (`?brand=sdlg`) resolve,
+ * because the lookup normalises before it compares. A brand with no products in
+ * this category stays as the visitor typed it: the page then renders its empty
+ * state instead of pretending the filter did something.
  */
 export function resolveBrandValue(facets: BrandFacet[], raw: string): string | undefined {
-  const key = raw.trim().toLowerCase();
+  const key = brandKey(raw);
   if (!key) return undefined;
-  return facets.find((facet) => facet.value.toLowerCase() === key)?.value;
+  return facets.find((facet) => facet.value === key)?.value;
 }
 
 /** Brand first, then the category facets, on top of the caller's own ordering. */
@@ -88,11 +104,9 @@ export function filterCatalogProducts(
   selection: CatalogSelection,
 ): Product[] {
   let list = products;
-  const brandKey = selection.brand?.trim().toLowerCase();
-  if (brandKey) {
-    list = list.filter((product) =>
-      product.brands.some((brand) => brand.toLowerCase() === brandKey),
-    );
+  const key = selection.brand ? brandKey(selection.brand) : "";
+  if (key) {
+    list = list.filter((product) => product.brands.some((brand) => brandKey(brand) === key));
   }
   if (selection.filters.length > 0) list = filterProducts(list, selection.filters);
   return list;
@@ -114,12 +128,13 @@ export function paginate<T>(
 /**
  * The one place that writes a category listing URL. Page one is left out so a
  * cleared filter and a first page share the same clean address, and ``brand``
- * keeps the value it was given so the link is readable and shareable.
+ * is written as its canonical key so one brand has exactly one address.
  */
 export function buildCategoryHref(slug: string, state: CatalogSelection & { page?: number } = { filters: [] }) {
   const encode = (value: string) => encodeURIComponent(value).replace(/%2C/gi, ",");
   const params: string[] = [];
-  if (state.brand) params.push(`brand=${encode(state.brand)}`);
+  const brand = state.brand ? brandKey(state.brand) : "";
+  if (brand) params.push(`brand=${encode(brand)}`);
   if (state.filters.length > 0) params.push(`filter=${state.filters.map(encode).join(",")}`);
   if (state.page && state.page > 1) params.push(`page=${state.page}`);
   const query = params.join("&");
