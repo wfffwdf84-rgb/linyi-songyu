@@ -48,8 +48,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!product) return {};
   const name = productName(locale, product.name);
 
+  // The panel-created entries use the model itself as the part number, so the
+  // name already opens with it. Prefixing it again read as "Hitachi 360-6 / 330
+  // Hitachi 360-6 / 330 Radiator" in the search result.
+  const partNumber = product.partNumber.trim();
+  const nameHasPartNumber =
+    partNumber.length > 0 && name.toLowerCase().includes(partNumber.toLowerCase());
+  const title = nameHasPartNumber ? `${name} | OEM` : `${partNumber} ${name} | OEM`;
+
   return {
-    title: `${product.partNumber} ${name} | OEM`,
+    title,
     description: productDescription(locale, product.description, product.name),
     alternates: pageAlternates(locale, `/parts/${category}/${slug}`),
     openGraph: {
