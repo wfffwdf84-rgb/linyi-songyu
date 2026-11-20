@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600" role="img" aria-label="Product photo not available">
+  <rect width="800" height="600" fill="#f4f5f7"/>
+  <g fill="none" stroke="#c2c6cc" stroke-width="6" stroke-linejoin="round" stroke-linecap="round">
+    <!-- top and bottom tanks -->
+    <rect x="196" y="168" width="408" height="58" rx="14"/>
+    <rect x="196" y="374" width="408" height="58" rx="14"/>
+    <!-- side plates -->
+    <path d="M196 226v148M604 226v148"/>
+    <!-- core -->
+    <path d="M232 226v148M268 226v148M304 226v148M340 226v148M376 226v148M412 226v148M448 226v148M484 226v148M520 226v148M556 226v148"/>
+    <!-- ports -->
+    <path d="M520 168v-40M300 432v40"/>
+  </g>
+  <g fill="#d5d9df">
+    <circle cx="520" cy="122" r="13"/>
+    <circle cx="300" cy="478" r="13"/>
+  </g>
+  <!-- photo glyph, small and unobtrusive -->
+  <g transform="translate(636 470)" fill="none" stroke="#c2c6cc" stroke-width="5" stroke-linejoin="round">
+    <rect x="0" y="0" width="72" height="56" rx="8"/>
+    <path d="M6 44l20-20 12 12 10-10 18 18"/>
+    <circle cx="52" cy="18" r="6" fill="#c2c6cc" stroke="none"/>
+  </g>
+</svg>

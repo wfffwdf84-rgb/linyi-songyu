@@ -218,7 +218,14 @@
     "powerSupply": "電源",
     "endurance": "稼働時間",
     "moq": "最小ロット",
-    "moqValue": "50個"
+    "moqValue": "50個",
+    "coreHeight": "コア高さ",
+    "totalWidth": "総幅",
+    "tubeType": "チューブタイプ",
+    "waterPortPosition": "ポート位置",
+    "portSize": "ポートサイズ",
+    "engine": "エンジン",
+    "remark": "備考"
   },
   "quality": {
     "title": "品質・物流",

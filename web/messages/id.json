@@ -218,7 +218,14 @@
     "powerSupply": "Catu daya",
     "endurance": "Waktu operasi",
     "moq": "MOQ",
-    "moqValue": "50 buah"
+    "moqValue": "50 buah",
+    "coreHeight": "Tinggi Inti",
+    "totalWidth": "Lebar Total",
+    "tubeType": "Tipe Tabung",
+    "waterPortPosition": "Posisi Port",
+    "portSize": "Ukuran Port",
+    "engine": "Mesin",
+    "remark": "Keterangan"
   },
   "quality": {
     "title": "Mutu & logistik",

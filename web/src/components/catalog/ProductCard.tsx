@@ -8,6 +8,7 @@ import { loc } from "@/lib/locale";
 import { AddToQuoteButton } from "@/components/quote/AddToQuoteButton";
 import { addToQuoteButtonClass } from "@/lib/quote-button";
 import { rememberProduct, saveScroll } from "@/lib/scroll-memory";
+import { productImageSource } from "@/lib/product-image";
 import { productName, productDescription, tr } from "@/lib/translated";
 
 type ProductCardProps = {
@@ -28,7 +29,7 @@ export function ProductCard({ product }: ProductCardProps) {
     >
       <div className="relative flex h-36 items-center justify-center overflow-hidden border-b border-outline-variant bg-white p-2 md:h-72 md:p-4">
         <Image
-          src={product.image}
+          src={productImageSource(product.image)}
           alt={name}
           width={400}
           height={300}

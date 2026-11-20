@@ -218,7 +218,14 @@
     "powerSupply": "전원",
     "endurance": "가동 시간",
     "moq": "최소주문",
-    "moqValue": "50개"
+    "moqValue": "50개",
+    "coreHeight": "코어 높이",
+    "totalWidth": "전체 폭",
+    "tubeType": "튜브 타입",
+    "waterPortPosition": "포트 위치",
+    "portSize": "포트 크기",
+    "engine": "엔진",
+    "remark": "비고"
   },
   "quality": {
     "title": "품질 및 물류",

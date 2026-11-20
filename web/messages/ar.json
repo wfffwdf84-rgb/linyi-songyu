@@ -218,7 +218,14 @@
     "powerSupply": "مصدر الطاقة",
     "endurance": "مدة التشغيل",
     "moq": "الحد الأدنى",
-    "moqValue": "50 قطعة"
+    "moqValue": "50 قطعة",
+    "coreHeight": "ارتفاع القلب",
+    "totalWidth": "العرض الكلي",
+    "tubeType": "نوع الأنبوب",
+    "waterPortPosition": "موضع المنافذ",
+    "portSize": "مقاس المنفذ",
+    "engine": "المحرك",
+    "remark": "ملاحظة"
   },
   "quality": {
     "title": "الجودة والشحن",

@@ -17,6 +17,7 @@ import { routing } from "@/i18n/routing";
 import { AddToQuoteButton } from "@/components/quote/AddToQuoteButton";
 import { ProductBackButton } from "@/components/product/ProductBackButton";
 import { addToQuoteButtonClass } from "@/lib/quote-button";
+import { productImageSource } from "@/lib/product-image";
 import { localePath, pageAlternates } from "@/lib/locales";
 import { absoluteImageUrl, socialCard } from "@/lib/social-card";
 import { brandListLabel } from "@/lib/brand-names";
@@ -136,7 +137,7 @@ export default async function ProductPage({ params }: PageProps) {
           <div className="flex flex-col gap-4 md:col-span-7">
             <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest">
               <Image
-                src={product.image}
+                src={productImageSource(product.image)}
                 alt={name}
                 fill
                 quality={100}

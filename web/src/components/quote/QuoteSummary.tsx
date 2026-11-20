@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
 import { loc } from "@/lib/locale";
 import { QUOTE_QTY_MAX } from "@/lib/commerce";
+import { productImageSource } from "@/lib/product-image";
 import { useQuoteList } from "@/components/quote/QuoteListProvider";
 
 export function QuoteCountBadge() {
@@ -58,7 +59,7 @@ export function QuoteSummary() {
                   href={`/parts/${item.categorySlug}/${item.slug}`}
                   className="relative h-16 w-16 shrink-0 overflow-hidden rounded border border-outline-variant bg-white"
                 >
-                  <Image src={item.image} alt={name} fill quality={100} unoptimized className="object-contain p-1" sizes="64px" />
+                  <Image src={productImageSource(item.image)} alt={name} fill quality={100} unoptimized className="object-contain p-1" sizes="64px" />
                 </Link>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">

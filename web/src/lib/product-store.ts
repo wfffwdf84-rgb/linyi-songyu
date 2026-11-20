@@ -32,8 +32,14 @@ const PART_NUMBER_MAX = 60;
 const BRAND_MAX = 80;
 const COMPATIBLE_MAX = 400;
 const IMAGE_MAX = 500;
-/** A product added from the panel is a full record, so the document earns a cap. */
-const NEW_PRODUCTS_MAX = 500;
+/**
+ * A product added from the panel is a full record, so the document earns a cap.
+ * The cap covers the whole overlay document, which is re-read and re-written on
+ * every save: a catalogue import (the 2026 radiator and intercooler batches) adds
+ * close to a thousand records, so the ceiling is set for a four-digit catalogue
+ * rather than the few hundred hand-entered ones it started with.
+ */
+const NEW_PRODUCTS_MAX = 4000;
 
 /** Lowercase, 3-80 characters, no leading/trailing dash: a URL segment. */
 export const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]{2,79}$/;
@@ -225,8 +231,11 @@ function coerceNewProduct(value: unknown): NewProduct | null {
   if (!categorySlug) return null;
   const name = coerceLocalised(row.name, NAME_MAX);
   if (!name.en) return null;
+  // An empty image is a product the operator has no photo for yet: the site
+  // renders the shipped placeholder instead of a broken <Image>. Only a value
+  // that is present has to be a usable image reference.
   const image = coerceText(row.image, IMAGE_MAX);
-  if (!image) return null;
+  if (image && !/^(?:https?:\/\/|\/)/i.test(image)) return null;
 
   const brands = Array.isArray(row.brands)
     ? row.brands.map((brand) => coerceText(brand, BRAND_MAX)).filter(Boolean)
@@ -817,8 +826,12 @@ export function sanitizeNewProduct(
   if (!nameEn) throw new ProductStoreError("invalid_name");
   const description = localisedText(body.description, DESCRIPTION_MAX, "invalid_description") ?? {};
 
+  // The photo is optional: a product with no photograph of its own renders the
+  // shipped placeholder, and that is a better answer than refusing the record.
   const image = imageValue(body.image);
-  if (!image) throw new ProductStoreError("invalid_image");
+  if (body.image !== undefined && body.image !== null && body.image !== "" && !image) {
+    throw new ProductStoreError("invalid_image");
+  }
 
   const price = priceValue(body.price ?? null);
   const specs = specRows(body.specs) ?? [];
@@ -845,7 +858,7 @@ export function sanitizeNewProduct(
     categorySlug,
     name: { en: nameEn, zh: name.zh ?? nameEn },
     description: { en: description.en ?? "", zh: description.zh ?? description.en ?? "" },
-    image,
+    image: image ?? "",
     inStock: typeof body.inStock === "boolean" ? body.inStock : true,
     specs,
     // The card reads `specs`, the product page table reads `technicalSpecs`;

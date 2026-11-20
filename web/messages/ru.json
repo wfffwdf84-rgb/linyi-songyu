@@ -218,7 +218,14 @@
     "powerSupply": "Питание",
     "endurance": "Время работы",
     "moq": "Мин. заказ",
-    "moqValue": "50 шт."
+    "moqValue": "50 шт.",
+    "coreHeight": "Высота сердцевины",
+    "totalWidth": "Общая ширина",
+    "tubeType": "Тип трубок",
+    "waterPortPosition": "Расположение патрубков",
+    "portSize": "Размер патрубков",
+    "engine": "Двигатель",
+    "remark": "Примечание"
   },
   "quality": {
     "title": "Качество и логистика",

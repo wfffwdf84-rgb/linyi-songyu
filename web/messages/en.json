@@ -218,7 +218,14 @@
     "powerSupply": "Power Supply",
     "endurance": "Runtime",
     "moq": "MOQ",
-    "moqValue": "50 pcs"
+    "moqValue": "50 pcs",
+    "coreHeight": "Core Height",
+    "totalWidth": "Total Width",
+    "tubeType": "Tube Type",
+    "waterPortPosition": "Port Position",
+    "portSize": "Port Size",
+    "engine": "Engine",
+    "remark": "Remark"
   },
   "quality": {
     "title": "Quality Control & Logistics",

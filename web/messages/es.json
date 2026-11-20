@@ -218,7 +218,14 @@
     "powerSupply": "Alimentación",
     "endurance": "Autonomía",
     "moq": "Pedido mín.",
-    "moqValue": "50 pzas"
+    "moqValue": "50 pzas",
+    "coreHeight": "Altura del núcleo",
+    "totalWidth": "Ancho total",
+    "tubeType": "Tipo de tubo",
+    "waterPortPosition": "Posición de las bocas",
+    "portSize": "Tamaño de las bocas",
+    "engine": "Motor",
+    "remark": "Observación"
   },
   "quality": {
     "title": "Calidad y logística",

@@ -218,7 +218,14 @@
     "powerSupply": "供电",
     "endurance": "续航",
     "moq": "起订",
-    "moqValue": "50件"
+    "moqValue": "50件",
+    "coreHeight": "芯高",
+    "totalWidth": "总宽",
+    "tubeType": "管型",
+    "waterPortPosition": "水口位置",
+    "portSize": "接口尺寸",
+    "engine": "配套发动机",
+    "remark": "备注"
   },
   "quality": {
     "title": "质量控制与物流",

@@ -218,7 +218,14 @@
     "powerSupply": "Nguồn điện",
     "endurance": "Thời gian chạy",
     "moq": "Đặt tối thiểu",
-    "moqValue": "50 cái"
+    "moqValue": "50 cái",
+    "coreHeight": "Chiều cao lõi",
+    "totalWidth": "Chiều rộng tổng",
+    "tubeType": "Loại ống",
+    "waterPortPosition": "Vị trí cổng",
+    "portSize": "Kích thước cổng",
+    "engine": "Động cơ",
+    "remark": "Ghi chú"
   },
   "quality": {
     "title": "Chất lượng & logistics",

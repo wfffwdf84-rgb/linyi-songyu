@@ -218,7 +218,14 @@
     "powerSupply": "Bekalan kuasa",
     "endurance": "Masa operasi",
     "moq": "MOQ",
-    "moqValue": "50 pcs"
+    "moqValue": "50 pcs",
+    "coreHeight": "Tinggi Teras",
+    "totalWidth": "Lebar Keseluruhan",
+    "tubeType": "Jenis Tiub",
+    "waterPortPosition": "Kedudukan Port",
+    "portSize": "Saiz Port",
+    "engine": "Enjin",
+    "remark": "Catatan"
   },
   "quality": {
     "title": "Kualiti & logistik",

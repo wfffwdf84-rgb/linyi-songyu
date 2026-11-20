@@ -218,7 +218,14 @@
     "powerSupply": "Alimentation",
     "endurance": "Autonomie",
     "moq": "Qté min.",
-    "moqValue": "50 pièces"
+    "moqValue": "50 pièces",
+    "coreHeight": "Hauteur du faisceau",
+    "totalWidth": "Largeur totale",
+    "tubeType": "Type de tubes",
+    "waterPortPosition": "Position des piquages",
+    "portSize": "Diamètre des piquages",
+    "engine": "Moteur",
+    "remark": "Remarque"
   },
   "quality": {
     "title": "Qualité & logistique",

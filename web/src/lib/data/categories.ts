@@ -88,6 +88,26 @@ export const categories: Category[] = [
     ],
   },
   {
+    // Air-to-air charge-air coolers, a separate family from the water radiators
+    // above: they are matched on core height and total width instead of overall
+    // dimensions, and they fit trucks as well as wheel loaders and excavators.
+    slug: "intercoolers",
+    name: { en: "Intercoolers", zh: "中冷器" },
+    icon: "ac_unit",
+    description: {
+      en: "Charge-air intercoolers for wheel loaders, excavators and trucks, matched by core height, total width, tube type and port size. Sinotruk, Shacman, FAW, Dongfeng, Auman and more.",
+      zh: "适配装载机、挖掘机与卡车的中冷器，按芯高、总宽、管型与接口尺寸选配，覆盖中国重汽、陕汽、一汽、东风、欧曼等品牌。",
+    },
+    filters: [
+      { id: "brand:Sinotruk", en: "Sinotruk", zh: "中国重汽" },
+      { id: "brand:Shacman", en: "Shacman", zh: "陕汽" },
+      { id: "brand:FAW", en: "FAW", zh: "一汽" },
+      { id: "brand:Dongfeng", en: "Dongfeng", zh: "东风" },
+      { id: "brand:Auman", en: "Auman", zh: "欧曼" },
+      { id: "inStock", en: "In Stock", zh: "现货" },
+    ],
+  },
+  {
     slug: "chinese-brand-parts",
     name: { en: "Chinese Brand Parts", zh: "中国品牌配件" },
     icon: "factory",

@@ -74,6 +74,48 @@ const BRANDS: Record<string, BrandEntry> = {
   yunyu: { en: "Yunyu", zh: "肥城" },
   zf: { en: "ZF", zh: "采埃孚" },
   zoomlion: { en: "Zoomlion", zh: "中联重科" },
+
+  /* Brands that came in with the 2026 radiator / intercooler catalogue: truck
+   * makers (the alu-plastic and intercooler pages) and the smaller Chinese
+   * machine builders that only appear in the "Others" pages of the PDF. Where
+   * the Chinese name is not confirmed the entry keeps the Latin spelling, which
+   * is what the Chinese site showed for those rows before. */
+  aotai: { en: "Aotai" },
+  auman: { en: "Auman", zh: "欧曼" },
+  baoding: { en: "Baoding" },
+  beiben: { en: "Beiben", zh: "北奔" },
+  case: { en: "CASE", zh: "凯斯" },
+  danyang: { en: "Danyang" },
+  dayun: { en: "Dayun", zh: "大运" },
+  dongfeng: { en: "Dongfeng", zh: "东风" },
+  dongfengliuzhou: { en: "Dongfeng Liuzhou", zh: "东风柳汽", aliases: ["DONGFENG LIUZHOU"] },
+  farizon: { en: "Farizon", zh: "远程" },
+  faw: { en: "FAW", zh: "一汽" },
+  hongyangenglyon: { en: "Hongyan Genlyon", zh: "上汽红岩", aliases: ["HONGYAN GENLYON", "Hongyan"] },
+  howo: { en: "HOWO", zh: "豪沃" },
+  hualing: { en: "Hualing", zh: "华菱" },
+  jac: { en: "JAC", zh: "江淮" },
+  jcm: { en: "JCM" },
+  jincheng: { en: "Jincheng", zh: "金城" },
+  jingong: { en: "Jingong", zh: "晋工" },
+  kubota: { en: "Kubota", zh: "久保田" },
+  longtai: { en: "Longtai", zh: "龙泰" },
+  north: { en: "North" },
+  pengpu: { en: "Pengpu", zh: "彭浦" },
+  pushi: { en: "Pushi" },
+  rhino: { en: "Rhino" },
+  shacman: { en: "Shacman", zh: "陕汽", aliases: ["Shanqi"] },
+  sinotruk: { en: "Sinotruk", zh: "中国重汽", aliases: ["中国重汽", "SINOTRUK"] },
+  takeuchi: { en: "Takeuchi", zh: "竹内" },
+  tonly: { en: "Tonly", zh: "同力" },
+  unbranded: { en: "Unbranded", zh: "未标注品牌" },
+  united: { en: "United" },
+  world: { en: "World" },
+  xuanhua: { en: "Xuanhua", zh: "宣化" },
+  yutong: { en: "Yutong", zh: "宇通" },
+  zhanyang: { en: "Zhanyang", zh: "詹阳" },
+  zhenyu: { en: "Zhenyu" },
+  zhongtong: { en: "Zhongtong", zh: "中通" },
 };
 
 /**

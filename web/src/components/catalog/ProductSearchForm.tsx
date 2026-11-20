@@ -6,6 +6,7 @@ import { useRouter } from "@/i18n/navigation";
 import Image from "next/image";
 import { MaterialIcon } from "@/components/ui/MaterialIcon";
 import { cn } from "@/lib/utils";
+import { productImageSource } from "@/lib/product-image";
 import type { ProductSearchHit } from "@/lib/data/products";
 
 /** The API localises the name before it reaches the browser. */
@@ -188,7 +189,7 @@ export function ProductSearchForm({
                 }}
               >
                 <Image
-                  src={item.image}
+                  src={productImageSource(item.image)}
                   alt=""
                   width={40}
                   height={40}

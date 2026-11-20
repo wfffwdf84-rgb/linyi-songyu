@@ -218,7 +218,14 @@
     "powerSupply": "แหล่งจ่ายไฟ",
     "endurance": "ระยะเวลาใช้งาน",
     "moq": "สั่งขั้นต่ำ",
-    "moqValue": "50 ชิ้น"
+    "moqValue": "50 ชิ้น",
+    "coreHeight": "ความสูงคอร์",
+    "totalWidth": "ความกว้างรวม",
+    "tubeType": "ชนิดท่อ",
+    "waterPortPosition": "ตำแหน่งพอร์ต",
+    "portSize": "ขนาดพอร์ต",
+    "engine": "เครื่องยนต์",
+    "remark": "หมายเหตุ"
   },
   "quality": {
     "title": "คุณภาพและโลจิสติกส์",
