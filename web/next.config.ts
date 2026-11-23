@@ -66,6 +66,18 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  /**
+   * `/sitemap.xml` is the sitemap index. While the sitemap is a single metadata
+   * route Next.js serves that URL itself; once `generateSitemaps()` shards it,
+   * the documents move to `/sitemap/<n>.xml` and no index is emitted. A route
+   * handler at `app/sitemap.xml/route.ts` collides with the metadata route
+   * ("Conflicting route and metadata at /sitemap.xml"), so the index is served
+   * from `app/sitemap-index.xml/route.ts` and this rewrite keeps the public URL
+   * that robots.txt and every search engine already know.
+   */
+  async rewrites() {
+    return [{ source: "/sitemap.xml", destination: "/sitemap-index.xml" }];
+  },
   async redirects() {
     return [
       {

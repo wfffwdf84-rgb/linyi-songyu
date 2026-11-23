@@ -1,8 +1,5 @@
 import type { MetadataRoute } from "next";
-import { categories } from "@/lib/data/categories";
-import { getPublicProducts } from "@/lib/catalog";
-import { siteConfig } from "@/lib/site";
-import { appLocales, localePath } from "@/lib/locales";
+import { sliceSitemapShard, sitemapEntries, sitemapShardCount } from "@/lib/sitemap";
 
 /**
  * Built on every request.
@@ -13,46 +10,33 @@ import { appLocales, localePath } from "@/lib/locales";
  * document is a few hundred kilobytes of cheap string work and search engines
  * fetch it a handful of times a day, so generating it fresh is the honest
  * trade: a new product is in the sitemap the moment its page is live.
+ *
+ * The list is sharded with generateSitemaps(): this file serves
+ * `/sitemap/<n>.xml` (n is 1-based) holding one slice of SITEMAP_SHARD_SIZE
+ * URLs, and `/sitemap.xml` is the index over those shards - see
+ * `src/app/sitemap-index.xml/route.ts`. `dynamic` is re-exported by the
+ * generated sitemap route, so the shards are rendered per request exactly like
+ * the single-file sitemap was.
  */
 export const dynamic = "force-dynamic";
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = siteConfig.url;
+/**
+ * Tells Next.js how many shard documents exist. The count follows the catalogue,
+ * so the shards and the index grow together when products are added.
+ */
+export async function generateSitemaps() {
+  const count = sitemapShardCount((await sitemapEntries()).length);
+  return Array.from({ length: count }, (_, index) => ({ id: index + 1 }));
+}
 
-  // Delisted products are already gone from the public loader, so they drop out
-  // of the sitemap without a second filter.
-  const products = await getPublicProducts();
+export default async function sitemap(props: {
+  id: Promise<string>;
+}): Promise<MetadataRoute.Sitemap> {
+  const shard = Number.parseInt(await props.id, 10);
+  // A shard id that is not a positive integer never matched a shard; hand back
+  // nothing rather than the first slice, so a bad URL cannot look like data.
+  if (!Number.isInteger(shard) || shard < 1) return [];
 
-  const paths = [
-    "",
-    "/parts",
-    "/about",
-    "/contact",
-    "/quality-logistics",
-    "/request-quote",
-    "/upload-video",
-    "/shipping",
-    "/payment",
-    "/privacy",
-    "/terms",
-    ...categories.map((cat) => `/parts/${cat.slug}`),
-    ...products.map((product) => `/parts/${product.categorySlug}/${product.slug}`),
-  ];
-
-  const languageMap = (path: string) =>
-    Object.fromEntries(
-      appLocales.map((locale) => [locale, `${base}${localePath(locale, path || "/")}`]),
-    );
-
-  return appLocales.flatMap((locale) =>
-    paths.map((path) => ({
-      url: `${base}${localePath(locale, path || "/")}`,
-      lastModified: new Date(),
-      changeFrequency: "weekly" as const,
-      priority: path === "" ? 1 : 0.7,
-      alternates: {
-        languages: languageMap(path),
-      },
-    })),
-  );
+  const entries = await sitemapEntries();
+  return sliceSitemapShard(entries, shard);
 }

@@ -20,6 +20,7 @@ npx vercel deploy --prod --archive=tgz --yes --scope gcjx
 | Name | Purpose |
 | --- | --- |
 | `NEXT_PUBLIC_SITE_URL` | Canonical origin used by metadata, JSON-LD and the sitemap |
+| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | Optional. Google Search Console HTML-tag token; while empty no `google-site-verification` meta tag is rendered |
 | `NEXT_PUBLIC_WHATSAPP` | WhatsApp deep link |
 | `NEXT_PUBLIC_FACEBOOK_URL` / `NEXT_PUBLIC_TIKTOK_URL` / `NEXT_PUBLIC_INSTAGRAM_URL` / `NEXT_PUBLIC_YOUTUBE_URL` | Social links |
 | `SUPABASE_URL` | Supabase project URL. Storage: the `songyu_documents` table for JSON documents, the public `songyu-media` bucket for photos and factory videos |
@@ -27,6 +28,48 @@ npx vercel deploy --prod --archive=tgz --yes --scope gcjx
 | `FACTORY_VIDEO_PASSWORD` | Password for the factory uploader **and** the inquiry desk. Also the fallback encryption key for inquiries |
 | `NEXT_PUBLIC_GA_ID` | GA4 measurement ID. While empty the site loads no analytics script and sets no analytics cookie |
 | `INQUIRY_ENCRYPTION_KEY` | Optional. Set it to keep stored inquiries readable if the factory password is ever rotated |
+
+## Google Search Console verification
+
+The site verifies with Search Console's **HTML tag** method. The tag comes from
+`NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`, read in the root metadata of
+`src/app/[locale]/layout.tsx` and rendered as `verification: { google: ... }`.
+While the variable is empty or unset, no tag is rendered at all, so an
+unconfigured deploy looks exactly like the site did before this was added.
+
+1. In Search Console add the domain property and choose **HTML tag**. Copy only
+   the `content="..."` value, not the whole tag.
+2. In the Vercel project `linyi-songyu` open **Settings → Environment Variables**
+   and add `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` with that value, for
+   Production (and Preview if previews should verify too).
+3. **Redeploy.** `NEXT_PUBLIC_*` values are inlined at build time, so adding the
+   variable to an existing deployment does not change its HTML; the site needs a
+   new build.
+4. Back in Search Console press **Verify**. The tag is rendered by the shared
+   locale layout, so it appears on every localized page (including
+   `https://songyuheavyparts.com/` and `/zh`) and one token covers all 13
+   locales. Check it with
+   `curl -s https://songyuheavyparts.com/zh | grep google-site-verification`.
+
+To remove the tag, delete the variable and redeploy: the `verification` field is
+then omitted from the metadata and no meta tag is written.
+
+## Sitemaps
+
+`src/app/sitemap.ts` is sharded with `generateSitemaps()`, 5,000 URLs per
+document:
+
+- `/sitemap.xml` - the sitemap index, written by
+  `src/app/sitemap-index.xml/route.ts` and reached through a rewrite in
+  `next.config.ts`. A route handler at `app/sitemap.xml/route.ts` is not
+  possible: Next.js reports "Conflicting route and metadata at /sitemap.xml"
+  next to the sitemap metadata route.
+- `/sitemap/<n>.xml` - shards `1..N`, where `N = ceil(total / 5000)`. The
+  production catalogue is ~20,000 URLs, so it currently spans 5 shards.
+
+Both the index and the shards are `dynamic = "force-dynamic"`, so a product
+added in the panel is in the sitemap without a rebuild, and `robots.txt` points
+at `/sitemap.xml`.
 
 ## Storage (Supabase)
 

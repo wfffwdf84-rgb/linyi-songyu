@@ -52,6 +52,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const isZh = locale === "zh";
   const ogLocale = isAppLocale(locale) ? localeOg[locale] : "en_US";
 
+  // Google Search Console, "HTML tag" method. The token is deployment
+  // configuration, not content: while the variable is unset the object is empty
+  // and no google-site-verification tag is rendered at all, so the live site is
+  // unchanged until the value is set in Vercel and rebuilt.
+  const googleSiteVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim();
+
   return {
     metadataBase: new URL(siteConfig.url),
     title: {
@@ -72,6 +78,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: [{ url: siteConfig.logo, alt: isZh ? siteConfig.shortNameZh : siteConfig.shortName }],
     },
     robots: { index: true, follow: true },
+    ...(googleSiteVerification ? { verification: { google: googleSiteVerification } } : {}),
   };
 }
 
